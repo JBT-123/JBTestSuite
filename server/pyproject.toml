@@ -1,0 +1,39 @@
+[project]
+name = "JBTestSuite-server"
+version = "0.1.0"
+description = "FastAPI backend with SQLAlchemy, Alembic, and Pydantic"
+authors = [
+  { name="LeongWZ", email="leongweizhi03@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+  "fastapi[standard]>=0.110.0",
+  "uvicorn[standard]>=0.27.0",
+  "sqlalchemy>=2.0.0",
+  "alembic>=1.12.0",
+  "pydantic>=2.0.0",
+  "python-dotenv>=1.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx",
+  "pytest",
+  "pytest-asyncio",
+  "black",
+  "isort",
+  "mypy",
+  "types-python-dateutil",
+  "coverage",
+  "pre-commit"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["src"]
+
