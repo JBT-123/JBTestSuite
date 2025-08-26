@@ -207,3 +207,23 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# JBTestSuite specific
+# Artifacts (screenshots, test results, etc.)
+# These will be stored in AWS S3 in production
+server/artifacts/
+artifacts/
+# Test generated media files (excluding client public assets)
+server/**/*.png
+server/**/*.jpg
+server/**/*.jpeg
+server/**/*.gif
+server/**/*.pdf
+server/**/*.mp4
+server/**/*.avi
+server/**/*.mov
+server/**/*.webm
+
+# Test results and logs
+test_results/
+*.log

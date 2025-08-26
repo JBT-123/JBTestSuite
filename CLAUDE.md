@@ -83,6 +83,22 @@ JBTestSuite/
 
 ## Development Commands
 
+### Environment Setup (Required First Step)
+Before running the application, set up environment variables:
+```bash
+# Copy example environment file
+cp .env.example .env
+
+# Edit with your actual values (required: POSTGRES_PASSWORD, OPENAI_API_KEY, SECRET_KEY)
+nano .env  # or your preferred editor
+
+# Generate secure values:
+# Secret key: python -c "import secrets; print(secrets.token_urlsafe(32))"
+# DB password: python -c "import secrets; print(secrets.token_urlsafe(16))"
+```
+
+See the README.md for complete environment setup instructions.
+
 ### Docker (Primary Development Method)
 ```bash
 # Build and start all services (Client, Server, PostgreSQL, Selenium)
@@ -138,6 +154,11 @@ pytest               # Run tests
 # Database migrations
 alembic upgrade head # Apply latest migrations
 alembic revision --autogenerate -m "description"  # Create new migration
+
+# Database setup in Docker
+docker-compose exec server alembic upgrade head  # Apply migrations in Docker
+docker-compose down -v  # Reset database (removes all data)
+docker-compose up --build  # Fresh start with new database
 ```
 
 ## Core Features Implementation
@@ -201,21 +222,50 @@ alembic revision --autogenerate -m "description"  # Create new migration
 
 ## Environment Variables
 
-Required environment variables:
-```env
-# Database
-DATABASE_URL=postgresql://user:password@postgres:5432/jbtestsuite
+The application uses environment variables for secure configuration. Key variables include:
 
-# OpenAI
-OPENAI_API_KEY=your_openai_api_key
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `SECRET_KEY` | Application secret key (auto-generated if not set) | Recommended |
+| `POSTGRES_PASSWORD` | Database password | **Yes** |
+| `OPENAI_API_KEY` | OpenAI API key for AI features | **Yes** |
+| `ENVIRONMENT` | Application environment (`development`/`production`) | No |
+| `CORS_ORIGINS` | Comma-separated list of allowed origins | No |
 
-# Selenium
-SELENIUM_HUB_URL=http://selenium:4444/wd/hub
+**Security Features:**
+- Automatic secret key generation using `secrets.token_urlsafe(32)`
+- Environment-based database configuration
+- No hardcoded credentials in source code
+- Separate `.env.example` files for reference
+- Artifacts folder excluded from version control (screenshots, logs)
 
-# Application
-ENVIRONMENT=development
-SECRET_KEY=your_secret_key
-```
+## Common Development Tasks
+
+### First-Time Setup
+1. Copy environment template: `cp .env.example .env`
+2. Generate secure values and add to `.env`:
+   ```bash
+   python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(32))"
+   python -c "import secrets; print('POSTGRES_PASSWORD=' + secrets.token_urlsafe(16))"
+   ```
+3. Add OpenAI API key to `.env` file
+4. Start services: `docker-compose up --build`
+5. Apply database migrations: `docker-compose exec server alembic upgrade head`
+
+### Testing WebSocket Functionality
+WebSockets provide real-time updates during test execution:
+- Test execution status changes
+- Step-by-step execution logs
+- Completion notifications
+- Error reporting
+
+Connection endpoint: `ws://localhost:8000/api/ws/test_updates`
+
+### Debugging Common Issues
+- **"relation test_cases does not exist"**: Run `docker-compose exec server alembic upgrade head`
+- **WebSocket not connecting**: Check server logs for `"WebSocket /api/ws/test_updates" [accepted]`
+- **OpenAI API errors**: Verify API key format starts with `sk-`
+- **Selenium issues**: Check `docker-compose logs selenium`
 
 ## Code Conventions
 

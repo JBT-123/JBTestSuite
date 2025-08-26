@@ -1,39 +1,25 @@
 import { createFileRoute } from '@tanstack/react-router'
-import logo from '../logo.svg'
+import CreateTestCaseForm from '../components/CreateTestCaseForm'
+import TestCaseList from '../components/TestCaseList'
 
 export const Route = createFileRoute('/')({
-  component: App,
+  component: Dashboard,
 })
 
-function App() {
+function Dashboard() {
   return (
-    <div className="text-center">
-      <header className="min-h-screen flex flex-col items-center justify-center bg-[#282c34] text-white text-[calc(10px+2vmin)]">
-        <img
-          src={logo}
-          className="h-[40vmin] pointer-events-none animate-[spin_20s_linear_infinite]"
-          alt="logo"
-        />
-        <p>
-          Edit <code>src/routes/index.tsx</code> and save to reload.
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          JBTestSuite Dashboard
+        </h1>
+        <p className="text-gray-600">
+          Manage and execute your web automation test cases with AI-powered analysis
         </p>
-        <a
-          className="text-[#61dafb] hover:underline"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <a
-          className="text-[#61dafb] hover:underline"
-          href="https://tanstack.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn TanStack
-        </a>
-      </header>
+      </div>
+      
+      <CreateTestCaseForm />
+      <TestCaseList />
     </div>
   )
 }
