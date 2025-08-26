@@ -58,6 +58,25 @@ High-level overview of the project, what it does, the main features
   - See: /plans/PLAN-001-jbtestsuite-implementation-roadmap.md
   - See: /tickets/TICKET-001-foundation-infrastructure-setup.md
 
+### Core Data Layer Development
+- [x] Implement Phase 2: Core Data Layer ✅
+  - Enhance database models with comprehensive domain architecture
+  - Create database migrations with proper relationships and constraints
+  - Build REST API endpoints with advanced features (filtering, pagination, bulk ops)
+  - Implement development tools for database seeding and testing
+  - See: /plans/PLAN-001-jbtestsuite-implementation-roadmap.md
+  - See: /tickets/TICKET-002-core-data-layer-implementation.md
+
+### Basic UI Integration Development  
+- [ ] Implement Phase 3: Basic UI Integration 🔄
+  - Create functional frontend for test management with TanStack Query integration
+  - Build core UI components (test case list/table, forms, navigation)
+  - Implement file-based routing with TanStack Router
+  - Style with responsive Tailwind CSS design
+  - Establish complete client-server communication
+  - See: /plans/PHASE-3-UI-INTEGRATION-BREAKDOWN-2025-08-26-14-45-00.md
+  - See: /tickets/TICKET-003-phase-3-basic-ui-integration.md
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

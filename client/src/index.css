@@ -5,10 +5,43 @@
 @layer base {
   html {
     font-family: system-ui, sans-serif;
+    scroll-behavior: smooth;
   }
   
   body {
     @apply bg-gray-50 text-gray-900;
+  }
+
+  /* Ensure focus is visible for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid theme(colors.blue.500);
+    outline-offset: 2px;
+  }
+
+  /* Screen reader only content */
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .btn {
+      border: 2px solid currentColor;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 
@@ -23,5 +56,29 @@
   
   .btn-secondary {
     @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+  }
+
+  /* Custom scrollbar for better UX */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: theme(colors.gray.300) theme(colors.gray.100);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: theme(colors.gray.100);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: theme(colors.gray.300);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: theme(colors.gray.400);
   }
 }

@@ -15,7 +15,7 @@ This file maintains a centralized list of all tickets in the project. Update thi
 ## Active Tickets
 
 ### High Priority
-_No high priority tickets yet_
+- 🟡 [TICKET-003](./TICKET-003-phase-3-basic-ui-integration.md) - Phase 3 - Basic UI Integration (Step 2 Complete)
 
 ### Medium Priority
 _No medium priority tickets yet_
@@ -25,6 +25,7 @@ _No low priority tickets yet_
 
 ## Completed Tickets
 - 🟢 [TICKET-001](./TICKET-001-foundation-infrastructure-setup.md) - Foundation Infrastructure Setup (Completed: 2025-08-26)
+- 🟢 [TICKET-002](./TICKET-002-core-data-layer-implementation.md) - Core Data Layer Implementation (Completed: 2025-08-26)
 
 ## Cancelled/Archived Tickets
 _No cancelled tickets yet_
