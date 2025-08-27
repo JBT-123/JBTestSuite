@@ -55,10 +55,10 @@ class ApiClient {
 
         // Handle network errors with retry logic
         if (!error.response && originalRequest && !(originalRequest as any)._retry) {
-          (originalRequest as any)._retry = true
-          
+          ;(originalRequest as any)._retry = true
+
           // Retry after 1 second
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          await new Promise((resolve) => setTimeout(resolve, 1000))
           return this.instance(originalRequest)
         }
 

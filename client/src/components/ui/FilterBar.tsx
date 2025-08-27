@@ -53,10 +53,7 @@ function FilterBar({
   const [tempDateRange, setTempDateRange] = useState(dateRange || { from: '', to: '' })
 
   const hasActiveFilters = Boolean(
-    searchValue || 
-    statusFilter || 
-    priorityFilter || 
-    (dateRange && (dateRange.from || dateRange.to))
+    searchValue || statusFilter || priorityFilter || (dateRange && (dateRange.from || dateRange.to))
   )
 
   const handleDateRangeApply = () => {
@@ -119,50 +116,85 @@ function FilterBar({
                   className={`w-full sm:w-auto ${dateRange?.from || dateRange?.to ? 'bg-blue-50 border-blue-300' : ''}`}
                   aria-expanded={showDateFilters}
                   aria-haspopup="true"
-                  aria-label={`Date range filter ${(dateRange?.from || dateRange?.to) ? '(active)' : ''}`}
+                  aria-label={`Date range filter ${dateRange?.from || dateRange?.to ? '(active)' : ''}`}
                 >
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    className="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
                   Date Range
                   {(dateRange?.from || dateRange?.to) && (
-                    <span className="ml-1 text-xs bg-blue-600 text-white rounded-full px-1.5 py-0.5" aria-hidden="true">
+                    <span
+                      className="ml-1 text-xs bg-blue-600 text-white rounded-full px-1.5 py-0.5"
+                      aria-hidden="true"
+                    >
                       1
                     </span>
                   )}
                 </Button>
 
                 {showDateFilters && (
-                  <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-4 shadow-lg z-10" role="dialog" aria-modal="true" aria-labelledby="date-filter-title">
+                  <div
+                    className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-4 shadow-lg z-10"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="date-filter-title"
+                  >
                     <div className="space-y-4">
-                      <h3 id="date-filter-title" className="font-medium text-gray-900 sr-only">Date Range Filter</h3>
+                      <h3 id="date-filter-title" className="font-medium text-gray-900 sr-only">
+                        Date Range Filter
+                      </h3>
                       <div>
-                        <label htmlFor="from-date" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                          htmlFor="from-date"
+                          className="block text-sm font-medium text-gray-700 mb-1"
+                        >
                           From Date
                         </label>
                         <Input
                           id="from-date"
                           type="date"
                           value={tempDateRange.from}
-                          onChange={(e) => setTempDateRange(prev => ({ ...prev, from: e.target.value }))}
+                          onChange={(e) =>
+                            setTempDateRange((prev) => ({ ...prev, from: e.target.value }))
+                          }
                           className="w-full"
                           aria-describedby="from-date-help"
                         />
-                        <span id="from-date-help" className="sr-only">Start date for filtering test cases</span>
+                        <span id="from-date-help" className="sr-only">
+                          Start date for filtering test cases
+                        </span>
                       </div>
                       <div>
-                        <label htmlFor="to-date" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                          htmlFor="to-date"
+                          className="block text-sm font-medium text-gray-700 mb-1"
+                        >
                           To Date
                         </label>
                         <Input
                           id="to-date"
                           type="date"
                           value={tempDateRange.to}
-                          onChange={(e) => setTempDateRange(prev => ({ ...prev, to: e.target.value }))}
+                          onChange={(e) =>
+                            setTempDateRange((prev) => ({ ...prev, to: e.target.value }))
+                          }
                           className="w-full"
                           aria-describedby="to-date-help"
                         />
-                        <span id="to-date-help" className="sr-only">End date for filtering test cases</span>
+                        <span id="to-date-help" className="sr-only">
+                          End date for filtering test cases
+                        </span>
                       </div>
                       <div className="flex gap-2 pt-2">
                         <Button
@@ -200,8 +232,19 @@ function FilterBar({
               className="w-full sm:w-auto"
               aria-label="Clear all active filters"
             >
-              <svg className="h-4 w-4 mr-2 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-4 w-4 mr-2 sm:mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
               <span className="sm:inline">Clear Filters</span>
             </Button>

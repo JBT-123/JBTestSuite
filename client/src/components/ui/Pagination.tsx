@@ -67,11 +67,12 @@ function Pagination({
   }
 
   return (
-    <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${className}`}>
+    <div
+      className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${className}`}
+    >
       <div className="flex items-center gap-4">
         <div className="text-sm text-gray-700">
-          Showing{' '}
-          <span className="font-medium">{startItem.toLocaleString()}</span> to{' '}
+          Showing <span className="font-medium">{startItem.toLocaleString()}</span> to{' '}
           <span className="font-medium">{endItem.toLocaleString()}</span> of{' '}
           <span className="font-medium">{totalItems.toLocaleString()}</span> results
         </div>
@@ -106,7 +107,12 @@ function Pagination({
             className="px-3"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Previous
           </Button>

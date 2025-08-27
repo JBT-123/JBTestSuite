@@ -1,17 +1,14 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { useTestCase, useUpdateTestCase, useCreateTestStep, useUpdateTestStep, useDeleteTestStep } from '../hooks'
+import {
+  useTestCase,
+  useUpdateTestCase,
+  useCreateTestStep,
+  useUpdateTestStep,
+  useDeleteTestStep,
+} from '../hooks'
 import { TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../api'
-import { 
-  Button, 
-  Input,
-  Textarea,
-  Select,
-  Checkbox,
-  Alert,
-  Loading,
-  Modal
-} from '../components/ui'
+import { Button, Input, Textarea, Select, Checkbox, Alert, Loading, Modal } from '../components/ui'
 import type { TestCaseUpdate, TestStepFormData, TestStepResponse } from '../types'
 
 export const Route = createFileRoute('/tests/$testId/edit')({
@@ -64,13 +61,13 @@ interface StepWithState extends TestStepFormData {
 function EditTestCase() {
   const { testId } = Route.useParams()
   const navigate = useNavigate()
-  
+
   const { data: testCase, isLoading, error } = useTestCase(testId, true)
   const updateTestCase = useUpdateTestCase()
   const createStep = useCreateTestStep()
   const updateStep = useUpdateTestStep()
   const deleteStep = useDeleteTestStep()
-  
+
   const [formData, setFormData] = useState<TestCaseUpdate>({})
   const [steps, setSteps] = useState<StepWithState[]>([])
   const [originalData, setOriginalData] = useState<any>(null)
@@ -96,7 +93,7 @@ function EditTestCase() {
         is_automated: testCase.is_automated,
         retry_count: testCase.retry_count,
       }
-      
+
       setFormData(initialFormData)
       setOriginalData({ ...initialFormData })
 
@@ -128,30 +125,34 @@ function EditTestCase() {
     if (!originalData) return
 
     const formChanged = JSON.stringify(formData) !== JSON.stringify(originalData)
-    const stepsChanged = steps.some(step => 
-      step.isNew || step.isModified || step.isDeleted ||
-      !step.originalData ||
-      JSON.stringify({
-        name: step.name,
-        description: step.description,
-        step_type: step.step_type,
-        selector: step.selector,
-        input_data: step.input_data,
-        expected_result: step.expected_result,
-        timeout_seconds: step.timeout_seconds,
-        is_optional: step.is_optional,
-        continue_on_failure: step.continue_on_failure,
-      }) !== JSON.stringify({
-        name: step.originalData.name,
-        description: step.originalData.description || '',
-        step_type: step.originalData.step_type,
-        selector: step.originalData.selector || '',
-        input_data: step.originalData.input_data || '',
-        expected_result: step.originalData.expected_result || '',
-        timeout_seconds: step.originalData.timeout_seconds || 30,
-        is_optional: step.originalData.is_optional,
-        continue_on_failure: step.originalData.continue_on_failure,
-      })
+    const stepsChanged = steps.some(
+      (step) =>
+        step.isNew ||
+        step.isModified ||
+        step.isDeleted ||
+        !step.originalData ||
+        JSON.stringify({
+          name: step.name,
+          description: step.description,
+          step_type: step.step_type,
+          selector: step.selector,
+          input_data: step.input_data,
+          expected_result: step.expected_result,
+          timeout_seconds: step.timeout_seconds,
+          is_optional: step.is_optional,
+          continue_on_failure: step.continue_on_failure,
+        }) !==
+          JSON.stringify({
+            name: step.originalData.name,
+            description: step.originalData.description || '',
+            step_type: step.originalData.step_type,
+            selector: step.originalData.selector || '',
+            input_data: step.originalData.input_data || '',
+            expected_result: step.originalData.expected_result || '',
+            timeout_seconds: step.originalData.timeout_seconds || 30,
+            is_optional: step.originalData.is_optional,
+            continue_on_failure: step.originalData.continue_on_failure,
+          })
     )
 
     setHasChanges(formChanged || stepsChanged)
@@ -173,7 +174,7 @@ function EditTestCase() {
     }
 
     // Validate steps
-    const visibleSteps = steps.filter(step => !step.isDeleted)
+    const visibleSteps = steps.filter((step) => !step.isDeleted)
     if (visibleSteps.length === 0) {
       newErrors.steps = 'At least one test step is required'
     }
@@ -189,9 +190,9 @@ function EditTestCase() {
   }
 
   const updateFormField = (field: keyof TestCaseUpdate, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
+      setErrors((prev) => ({ ...prev, [field]: '' }))
     }
   }
 
@@ -203,7 +204,7 @@ function EditTestCase() {
   }
 
   const removeTag = (tagToRemove: string) => {
-    updateFormField('tags', formData.tags?.filter(tag => tag !== tagToRemove) || [])
+    updateFormField('tags', formData.tags?.filter((tag) => tag !== tagToRemove) || [])
   }
 
   const addStep = () => {
@@ -221,47 +222,51 @@ function EditTestCase() {
       continue_on_failure: false,
       isNew: true,
     }
-    setSteps(prev => [...prev, newStep])
+    setSteps((prev) => [...prev, newStep])
   }
 
   const updateStepField = (stepIndex: number, field: keyof TestStepFormData, value: any) => {
-    setSteps(prev => prev.map((step, index) => {
-      if (index === stepIndex) {
-        const updatedStep = { ...step, [field]: value }
-        if (!step.isNew && step.originalData) {
-          updatedStep.isModified = true
+    setSteps((prev) =>
+      prev.map((step, index) => {
+        if (index === stepIndex) {
+          const updatedStep = { ...step, [field]: value }
+          if (!step.isNew && step.originalData) {
+            updatedStep.isModified = true
+          }
+          return updatedStep
         }
-        return updatedStep
-      }
-      return step
-    }))
-    
+        return step
+      })
+    )
+
     const errorKey = `step-${stepIndex}-${field}`
     if (errors[errorKey]) {
-      setErrors(prev => ({ ...prev, [errorKey]: '' }))
+      setErrors((prev) => ({ ...prev, [errorKey]: '' }))
     }
   }
 
   const removeStep = (stepIndex: number) => {
     const step = steps[stepIndex]
-    
+
     if (step.isNew) {
       // Remove new steps completely
-      setSteps(prev => prev.filter((_, index) => index !== stepIndex))
+      setSteps((prev) => prev.filter((_, index) => index !== stepIndex))
     } else {
       // Mark existing steps as deleted
-      setSteps(prev => prev.map((s, index) => 
-        index === stepIndex ? { ...s, isDeleted: true } : s
-      ))
+      setSteps((prev) =>
+        prev.map((s, index) => (index === stepIndex ? { ...s, isDeleted: true } : s))
+      )
     }
   }
 
   const moveStep = (stepIndex: number, direction: 'up' | 'down') => {
-    const visibleSteps = steps.filter(step => !step.isDeleted)
-    const visibleIndex = visibleSteps.findIndex(s => s.temp_id === steps[stepIndex].temp_id)
-    
-    if ((direction === 'up' && visibleIndex === 0) || 
-        (direction === 'down' && visibleIndex === visibleSteps.length - 1)) {
+    const visibleSteps = steps.filter((step) => !step.isDeleted)
+    const visibleIndex = visibleSteps.findIndex((s) => s.temp_id === steps[stepIndex].temp_id)
+
+    if (
+      (direction === 'up' && visibleIndex === 0) ||
+      (direction === 'down' && visibleIndex === visibleSteps.length - 1)
+    ) {
       return
     }
 
@@ -269,12 +274,12 @@ function EditTestCase() {
     const currentStepIndex = stepIndex
     const targetVisibleIndex = direction === 'up' ? visibleIndex - 1 : visibleIndex + 1
     const targetStep = visibleSteps[targetVisibleIndex]
-    const targetStepIndex = steps.findIndex(s => s.temp_id === targetStep.temp_id)
-    
+    const targetStepIndex = steps.findIndex((s) => s.temp_id === targetStep.temp_id)
+
     const temp = newSteps[currentStepIndex]
     newSteps[currentStepIndex] = newSteps[targetStepIndex]
     newSteps[targetStepIndex] = temp
-    
+
     setSteps(newSteps)
   }
 
@@ -286,14 +291,14 @@ function EditTestCase() {
       // Update test case basic info
       await updateTestCase.mutateAsync({
         testId,
-        data: formData
+        data: formData,
       })
 
       // Handle step changes
-      const visibleSteps = steps.filter(step => !step.isDeleted)
-      
+      const visibleSteps = steps.filter((step) => !step.isDeleted)
+
       // Delete removed steps
-      const deletedSteps = steps.filter(step => step.isDeleted && step.id)
+      const deletedSteps = steps.filter((step) => step.isDeleted && step.id)
       for (const step of deletedSteps) {
         await deleteStep.mutateAsync({ testId, stepId: step.id! })
       }
@@ -323,7 +328,7 @@ function EditTestCase() {
           await updateStep.mutateAsync({
             testId,
             stepId: step.id!,
-            stepData
+            stepData,
           })
         }
       }
@@ -364,10 +369,7 @@ function EditTestCase() {
             message={error ? `${String((error as any)?.message ?? error)}` : 'Test case not found'}
           />
           <div className="mt-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate({ to: '/tests' })}
-            >
+            <Button variant="outline" onClick={() => navigate({ to: '/tests' })}>
               ← Back to Tests
             </Button>
           </div>
@@ -376,7 +378,7 @@ function EditTestCase() {
     )
   }
 
-  const visibleSteps = steps.filter(step => !step.isDeleted)
+  const visibleSteps = steps.filter((step) => !step.isDeleted)
 
   return (
     <div className="py-8">
@@ -385,17 +387,18 @@ function EditTestCase() {
         <nav className="mb-8 flex" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 md:space-x-3">
             <li className="inline-flex items-center">
-              <Link 
-                to="/tests" 
-                className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-              >
+              <Link to="/tests" className="text-gray-500 hover:text-gray-700 text-sm font-medium">
                 Test Cases
               </Link>
             </li>
             <li>
               <div className="flex items-center">
                 <svg className="w-4 h-4 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <Link
                   to="/tests/$testId"
@@ -409,7 +412,11 @@ function EditTestCase() {
             <li>
               <div className="flex items-center">
                 <svg className="w-4 h-4 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-500 text-sm font-medium">Edit</span>
               </div>
@@ -427,9 +434,7 @@ function EditTestCase() {
               </span>
             )}
           </div>
-          <p className="text-gray-600">
-            Make changes to your test case and its steps
-          </p>
+          <p className="text-gray-600">Make changes to your test case and its steps</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm">
@@ -504,7 +509,9 @@ function EditTestCase() {
                     label="Expected Duration (seconds)"
                     type="number"
                     value={formData.expected_duration_seconds?.toString() || '120'}
-                    onChange={(e) => updateFormField('expected_duration_seconds', parseInt(e.target.value) || 120)}
+                    onChange={(e) =>
+                      updateFormField('expected_duration_seconds', parseInt(e.target.value) || 120)
+                    }
                     error={errors.expected_duration_seconds}
                     min="1"
                   />
@@ -545,15 +552,11 @@ function EditTestCase() {
                           }
                         }}
                       />
-                      <Button
-                        variant="outline"
-                        onClick={addTag}
-                        disabled={!tagInput.trim()}
-                      >
+                      <Button variant="outline" onClick={addTag} disabled={!tagInput.trim()}>
                         Add
                       </Button>
                     </div>
-                    
+
                     {formData.tags && formData.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {formData.tags.map((tag) => (
@@ -566,8 +569,18 @@ function EditTestCase() {
                               onClick={() => removeTag(tag)}
                               className="ml-2 text-blue-600 hover:text-blue-800"
                             >
-                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              <svg
+                                className="h-3 w-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
                               </svg>
                             </button>
                           </span>
@@ -586,8 +599,18 @@ function EditTestCase() {
                   Test Steps ({visibleSteps.length})
                 </h2>
                 <Button onClick={addStep}>
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <svg
+                    className="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
                   </svg>
                   Add Step
                 </Button>
@@ -604,14 +627,16 @@ function EditTestCase() {
 
               <div className="space-y-6">
                 {visibleSteps.map((step, index) => {
-                  const stepIndex = steps.findIndex(s => s.temp_id === step.temp_id)
+                  const stepIndex = steps.findIndex((s) => s.temp_id === step.temp_id)
                   return (
-                    <div 
-                      key={step.temp_id} 
+                    <div
+                      key={step.temp_id}
                       className={`border rounded-lg p-6 ${
-                        step.isNew ? 'border-green-200 bg-green-50' : 
-                        step.isModified ? 'border-amber-200 bg-amber-50' : 
-                        'border-gray-200'
+                        step.isNew
+                          ? 'border-green-200 bg-green-50'
+                          : step.isModified
+                            ? 'border-amber-200 bg-amber-50'
+                            : 'border-gray-200'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-4">
@@ -645,13 +670,19 @@ function EditTestCase() {
                           >
                             ↓
                           </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => removeStep(stepIndex)}
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <Button variant="danger" size="sm" onClick={() => removeStep(stepIndex)}>
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
                             </svg>
                           </Button>
                         </div>
@@ -693,7 +724,13 @@ function EditTestCase() {
                             label="Timeout (seconds)"
                             type="number"
                             value={step.timeout_seconds?.toString() || '30'}
-                            onChange={(e) => updateStepField(stepIndex, 'timeout_seconds', parseInt(e.target.value) || 30)}
+                            onChange={(e) =>
+                              updateStepField(
+                                stepIndex,
+                                'timeout_seconds',
+                                parseInt(e.target.value) || 30
+                              )
+                            }
                             min="1"
                           />
                         </div>
@@ -720,7 +757,9 @@ function EditTestCase() {
                           <Input
                             label="Expected Result"
                             value={step.expected_result}
-                            onChange={(value) => updateStepField(stepIndex, 'expected_result', value)}
+                            onChange={(value) =>
+                              updateStepField(stepIndex, 'expected_result', value)
+                            }
                             placeholder="What should happen after this step"
                           />
                         </div>
@@ -729,7 +768,9 @@ function EditTestCase() {
                           <Checkbox
                             label="Optional Step"
                             checked={step.is_optional}
-                            onChange={(checked) => updateStepField(stepIndex, 'is_optional', checked)}
+                            onChange={(checked) =>
+                              updateStepField(stepIndex, 'is_optional', checked)
+                            }
                           />
                         </div>
 
@@ -737,7 +778,9 @@ function EditTestCase() {
                           <Checkbox
                             label="Continue on Failure"
                             checked={step.continue_on_failure}
-                            onChange={(checked) => updateStepField(stepIndex, 'continue_on_failure', checked)}
+                            onChange={(checked) =>
+                              updateStepField(stepIndex, 'continue_on_failure', checked)
+                            }
                           />
                         </div>
                       </div>
@@ -747,15 +790,37 @@ function EditTestCase() {
 
                 {visibleSteps.length === 0 && (
                   <div className="text-center py-12">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                      />
                     </svg>
                     <h3 className="mt-2 text-sm font-medium text-gray-900">No steps</h3>
-                    <p className="mt-1 text-sm text-gray-500">This test case needs at least one step</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      This test case needs at least one step
+                    </p>
                     <div className="mt-6">
                       <Button onClick={addStep}>
-                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <svg
+                          className="h-4 w-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
                         </svg>
                         Add First Step
                       </Button>
@@ -767,18 +832,10 @@ function EditTestCase() {
 
             {/* Actions */}
             <div className="flex justify-between pt-6 border-t border-gray-200">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
+              <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleSubmit}
-                loading={isSaving}
-                disabled={!hasChanges}
-              >
+              <Button onClick={handleSubmit} loading={isSaving} disabled={!hasChanges}>
                 Save Changes
               </Button>
             </div>
@@ -798,16 +855,10 @@ function EditTestCase() {
             </p>
 
             <div className="flex gap-3 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setShowExitModal(false)}
-              >
+              <Button variant="outline" onClick={() => setShowExitModal(false)}>
                 Continue Editing
               </Button>
-              <Button
-                variant="danger"
-                onClick={() => navigate({ to: `/tests/${testId}` })}
-              >
+              <Button variant="danger" onClick={() => navigate({ to: `/tests/${testId}` })}>
                 Discard Changes
               </Button>
             </div>
@@ -820,11 +871,11 @@ function EditTestCase() {
             type="error"
             title="Error saving changes"
             message={String(
-              (updateTestCase.error as any)?.message ?? 
-              (createStep.error as any)?.message ??
-              (updateStep.error as any)?.message ??
-              (deleteStep.error as any)?.message ??
-              'An error occurred while saving'
+              (updateTestCase.error as any)?.message ??
+                (createStep.error as any)?.message ??
+                (updateStep.error as any)?.message ??
+                (deleteStep.error as any)?.message ??
+                'An error occurred while saving'
             )}
             className="mt-4"
           />

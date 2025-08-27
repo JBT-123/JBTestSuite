@@ -114,7 +114,7 @@ async def create_test(
     session.add(test_case)
     await session.commit()
     await session.refresh(test_case)
-    return test_case
+    return TestCaseResponse.model_validate(test_case)
 
 
 @router.get("/{test_id}", response_model=TestCaseResponse)
@@ -134,7 +134,7 @@ async def get_test(
     if not test_case:
         raise HTTPException(status_code=404, detail="Test case not found")
     
-    return test_case
+    return TestCaseResponse.model_validate(test_case)
 
 
 @router.put("/{test_id}", response_model=TestCaseResponse)
@@ -155,7 +155,7 @@ async def update_test(
     
     await session.commit()
     await session.refresh(test_case)
-    return test_case
+    return TestCaseResponse.model_validate(test_case)
 
 
 @router.delete("/{test_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -229,7 +229,7 @@ async def get_test_steps(
         .order_by(TestStep.order_index)
     )
     steps = result.scalars().all()
-    return steps
+    return [TestStepResponse.model_validate(step) for step in steps]
 
 
 @router.post("/{test_id}/steps", response_model=TestStepResponse, status_code=status.HTTP_201_CREATED)
@@ -248,7 +248,7 @@ async def create_test_step(
     session.add(step)
     await session.commit()
     await session.refresh(step)
-    return step
+    return TestStepResponse.model_validate(step)
 
 
 @router.put("/{test_id}/steps/{step_id}", response_model=TestStepResponse)
@@ -274,7 +274,7 @@ async def update_test_step(
     
     await session.commit()
     await session.refresh(step)
-    return step
+    return TestStepResponse.model_validate(step)
 
 
 @router.delete("/{test_id}/steps/{step_id}", status_code=status.HTTP_204_NO_CONTENT)

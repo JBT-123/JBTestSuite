@@ -5,7 +5,10 @@ import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 export default defineConfig({
   plugins: [
     react(),
-    TanStackRouterVite()
+    TanStackRouterVite({
+      routesDirectory: 'src/routes',
+      generatedRouteTree: 'src/routeTree.gen.ts',
+    })
   ],
   server: {
     host: true,

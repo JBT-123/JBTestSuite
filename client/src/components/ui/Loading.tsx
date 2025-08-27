@@ -11,18 +11,18 @@ const Loading: React.FC<LoadingProps> = ({
   size = 'md',
   text,
   fullScreen = false,
-  className = ''
+  className = '',
 }) => {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-8 w-8',
-    lg: 'h-12 w-12'
+    lg: 'h-12 w-12',
   }
 
   const textSizeClasses = {
     sm: 'text-sm',
     md: 'text-base',
-    lg: 'text-lg'
+    lg: 'text-lg',
   }
 
   const spinner = (
@@ -32,14 +32,7 @@ const Loading: React.FC<LoadingProps> = ({
       fill="none"
       viewBox="0 0 24 24"
     >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"
@@ -53,30 +46,20 @@ const Loading: React.FC<LoadingProps> = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75 backdrop-blur-sm">
         <div className="text-center">
           {spinner}
-          {text && (
-            <p className={`mt-2 text-gray-600 ${textSizeClasses[size]}`}>
-              {text}
-            </p>
-          )}
+          {text && <p className={`mt-2 text-gray-600 ${textSizeClasses[size]}`}>{text}</p>}
         </div>
       </div>
     )
   }
 
-  const containerClasses = [
-    'flex items-center justify-center',
-    text ? 'space-x-2' : '',
-    className
-  ].filter(Boolean).join(' ')
+  const containerClasses = ['flex items-center justify-center', text ? 'space-x-2' : '', className]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div className={containerClasses}>
       {spinner}
-      {text && (
-        <span className={`text-gray-600 ${textSizeClasses[size]}`}>
-          {text}
-        </span>
-      )}
+      {text && <span className={`text-gray-600 ${textSizeClasses[size]}`}>{text}</span>}
     </div>
   )
 }

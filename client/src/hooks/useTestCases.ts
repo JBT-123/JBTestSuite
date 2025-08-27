@@ -1,9 +1,5 @@
 import { useState } from 'react'
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { testCaseService } from '../api/testCases'
 import type {
   TestCaseCreate,
@@ -246,7 +242,7 @@ export function usePaginatedTestCases(initialParams?: {
   const query = useTestCases(params)
 
   const updateFilters = (filters: Partial<FilterParams>) => {
-    setParams(prev => ({
+    setParams((prev) => ({
       ...prev,
       filters: { ...prev.filters, ...filters },
       pagination: { ...prev.pagination, page: 1 }, // Reset to first page
@@ -254,14 +250,14 @@ export function usePaginatedTestCases(initialParams?: {
   }
 
   const updatePagination = (pagination: Partial<PaginationParams>) => {
-    setParams(prev => ({
+    setParams((prev) => ({
       ...prev,
       pagination: { ...prev.pagination, ...pagination },
     }))
   }
 
   const updateSort = (sort: Partial<SortParams>) => {
-    setParams(prev => ({
+    setParams((prev) => ({
       ...prev,
       sort: { ...prev.sort, ...sort },
     }))

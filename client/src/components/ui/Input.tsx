@@ -28,14 +28,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
 
-    const baseInputClasses = 'block px-3 py-2 border rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed'
-    
+    const baseInputClasses =
+      'block px-3 py-2 border rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed'
+
     const variantClasses = {
       default: 'border-gray-300 bg-white hover:border-gray-400 focus:border-blue-500',
-      filled: 'border-gray-200 bg-gray-50 hover:bg-gray-100 focus:bg-white focus:border-blue-500'
+      filled: 'border-gray-200 bg-gray-50 hover:bg-gray-100 focus:bg-white focus:border-blue-500',
     }
 
-    const errorClasses = error 
+    const errorClasses = error
       ? 'border-red-300 bg-red-50 hover:border-red-400 focus:border-red-500 focus:ring-red-500'
       : variantClasses[variant]
 
@@ -47,16 +48,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       widthClasses,
       leftIcon ? 'pl-10' : '',
       rightIcon ? 'pr-10' : '',
-      className
-    ].filter(Boolean).join(' ')
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ')
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
             {label}
           </label>
         )}
@@ -66,12 +66,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               <span className="text-gray-500 sm:text-sm">{leftIcon}</span>
             </div>
           )}
-          <input
-            ref={ref}
-            id={inputId}
-            className={inputClasses}
-            {...props}
-          />
+          <input ref={ref} id={inputId} className={inputClasses} {...props} />
           {rightIcon && (
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
               <span className="text-gray-500 sm:text-sm">{rightIcon}</span>
@@ -83,11 +78,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {error}
           </p>
         )}
-        {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">
-            {helperText}
-          </p>
-        )}
+        {helperText && !error && <p className="mt-1 text-sm text-gray-500">{helperText}</p>}
       </div>
     )
   }

@@ -62,7 +62,7 @@ class TestCase(TimestampedModel):
 
     steps: Mapped[List["TestStep"]] = relationship(
         "TestStep", back_populates="test_case", cascade="all, delete-orphan",
-        order_by="TestStep.order_index"
+        order_by="TestStep.order_index", lazy="selectin"
     )
     
     executions: Mapped[List["TestExecution"]] = relationship(

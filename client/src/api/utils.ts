@@ -10,7 +10,7 @@ export function buildQueryParams(params: Record<string, any>): URLSearchParams {
     }
 
     if (Array.isArray(value)) {
-      value.forEach(item => {
+      value.forEach((item) => {
         if (item !== undefined && item !== null && item !== '') {
           searchParams.append(key, item.toString())
         }
@@ -297,7 +297,7 @@ export const TEST_CASE_STATUS = {
   DRAFT: 'draft',
   ACTIVE: 'active',
   ARCHIVED: 'archived',
-  DISABLED: 'disabled',
+  INACTIVE: 'inactive',
 } as const
 
 export const TEST_CASE_PRIORITY = {

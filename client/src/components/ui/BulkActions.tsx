@@ -56,7 +56,9 @@ function BulkActions({
 
   return (
     <>
-      <div className={`flex flex-col gap-4 rounded-lg bg-blue-50 p-4 sm:flex-row sm:items-center sm:justify-between ${className}`}>
+      <div
+        className={`flex flex-col gap-4 rounded-lg bg-blue-50 p-4 sm:flex-row sm:items-center sm:justify-between ${className}`}
+      >
         <div className="flex items-center gap-4">
           <div className="text-sm font-medium text-blue-900">
             {selectedCount} of {totalCount} items selected
@@ -101,9 +103,7 @@ function BulkActions({
                 disabled={loading}
                 className={variantClasses[action.variant || 'default']}
               >
-                {action.icon && (
-                  <span className="mr-2">{action.icon}</span>
-                )}
+                {action.icon && <span className="mr-2">{action.icon}</span>}
                 {action.label}
               </Button>
             )
@@ -120,16 +120,12 @@ function BulkActions({
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              {confirmAction.confirmationMessage || 
-                `Are you sure you want to ${confirmAction.label.toLowerCase()} ${selectedCount} selected item${selectedCount === 1 ? '' : 's'}?`
-              }
+              {confirmAction.confirmationMessage ||
+                `Are you sure you want to ${confirmAction.label.toLowerCase()} ${selectedCount} selected item${selectedCount === 1 ? '' : 's'}?`}
             </p>
 
             <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setConfirmAction(null)}
-              >
+              <Button variant="outline" onClick={() => setConfirmAction(null)}>
                 Cancel
               </Button>
               <Button

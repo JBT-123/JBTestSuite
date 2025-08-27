@@ -25,20 +25,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseClasses = 'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed'
+    const baseClasses =
+      'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed'
 
     const variantClasses = {
       primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800',
       secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300',
       danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
       ghost: 'text-gray-700 hover:bg-gray-100 active:bg-gray-200',
-      outline: 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+      outline:
+        'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100',
     }
 
     const sizeClasses = {
       sm: 'h-8 px-3 text-sm rounded-md',
       md: 'h-10 px-4 text-sm rounded-md',
-      lg: 'h-12 px-6 text-base rounded-lg'
+      lg: 'h-12 px-6 text-base rounded-lg',
     }
 
     const widthClasses = fullWidth ? 'w-full' : ''
@@ -48,16 +50,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variantClasses[variant],
       sizeClasses[size],
       widthClasses,
-      className
-    ].filter(Boolean).join(' ')
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ')
 
     return (
-      <button
-        ref={ref}
-        disabled={disabled || loading}
-        className={classes}
-        {...props}
-      >
+      <button ref={ref} disabled={disabled || loading} className={classes} {...props}>
         {loading ? (
           <>
             <svg
@@ -86,9 +85,17 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         ) : (
           <>
-            {leftIcon && <span className="mr-2" aria-hidden="true">{leftIcon}</span>}
+            {leftIcon && (
+              <span className="mr-2" aria-hidden="true">
+                {leftIcon}
+              </span>
+            )}
             {children}
-            {rightIcon && <span className="ml-2" aria-hidden="true">{rightIcon}</span>}
+            {rightIcon && (
+              <span className="ml-2" aria-hidden="true">
+                {rightIcon}
+              </span>
+            )}
           </>
         )}
       </button>

@@ -8,25 +8,16 @@ export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElemen
 }
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  (
-    {
-      label,
-      description,
-      error,
-      indeterminate = false,
-      className = '',
-      id,
-      ...props
-    },
-    ref
-  ) => {
+  ({ label, description, error, indeterminate = false, className = '', id, ...props }, ref) => {
     const checkboxId = id || label?.toLowerCase().replace(/\s+/g, '-')
 
     const checkboxClasses = [
       'h-4 w-4 text-blue-600 border-gray-300 rounded transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
       error ? 'border-red-300 focus:ring-red-500' : '',
-      className
-    ].filter(Boolean).join(' ')
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ')
 
     return (
       <div className="flex items-start">
@@ -59,9 +50,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               </label>
             )}
             {description && (
-              <p className={`text-gray-500 ${props.disabled ? 'opacity-50' : ''}`}>
-                {description}
-              </p>
+              <p className={`text-gray-500 ${props.disabled ? 'opacity-50' : ''}`}>{description}</p>
             )}
             {error && (
               <p className="text-red-600 mt-1" role="alert">

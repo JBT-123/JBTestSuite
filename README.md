@@ -119,11 +119,37 @@ The setup includes:
 - **Debug logging** enabled
 - **Database persistence** across restarts
 
-## 📖 API Documentation
+## 📖 Documentation
 
+Comprehensive documentation is available in the `docs/` folder:
+
+### 📚 Getting Started
+- **[Installation Guide](docs/installation.md)** - Complete setup instructions
+- **[Quick Start Guide](docs/quick-start.md)** - Get running in 5 minutes
+- **[Architecture Overview](docs/architecture.md)** - System design and components
+
+### 🛠️ Development
+- **[Development Setup](docs/development/setup.md)** - Local development environment
+- **[API Documentation](docs/api/README.md)** - Complete REST API reference
+- **[Frontend Guide](docs/frontend/README.md)** - React/TypeScript client docs
+- **[Backend Guide](docs/backend/README.md)** - FastAPI server documentation
+
+### ✨ Features
+- **[Test Management](docs/features/test-management.md)** - Creating and organizing tests
+- **[Selenium Integration](docs/features/selenium.md)** - Browser automation
+- **[AI Integration](docs/features/ai.md)** - OpenAI-powered testing
+- **[Real-time Features](docs/features/websockets.md)** - Live monitoring
+
+### 🚀 Deployment & Troubleshooting
+- **[Docker Guide](docs/deployment/docker.md)** - Container deployment
+- **[Production Setup](docs/deployment/production.md)** - Production configuration
+- **[Common Issues](docs/troubleshooting/common-issues.md)** - Troubleshooting guide
+- **[FAQ](docs/troubleshooting/faq.md)** - Frequently asked questions
+
+### 🎯 Interactive API Documentation
 Once running, visit http://localhost:8000/docs for interactive API documentation.
 
-## 🎯 Next Steps
+## 🎯 Project Roadmap
 
 This is Phase 1 foundation setup. See `/claude/plans/` for implementation roadmap:
 
@@ -132,7 +158,7 @@ This is Phase 1 foundation setup. See `/claude/plans/` for implementation roadma
 - **Phase 4**: AI-powered test generation
 - **Phase 5**: Real-time monitoring and WebSockets
 
-## 🐛 Troubleshooting
+## 🐛 Quick Troubleshooting
 
 ### Common Issues
 

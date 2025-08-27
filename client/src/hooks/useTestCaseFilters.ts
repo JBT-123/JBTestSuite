@@ -36,19 +36,19 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
 
   const apiFilters = useMemo((): FilterParams => {
     const result: FilterParams = {}
-    
+
     if (filters.status) {
       result.status = filters.status
     }
-    
+
     if (filters.dateRange?.from) {
       result.created_after = filters.dateRange.from
     }
-    
+
     if (filters.dateRange?.to) {
       result.created_before = filters.dateRange.to
     }
-    
+
     return result
   }, [filters])
 
@@ -70,7 +70,7 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
           item.name.toLowerCase().includes(searchLower) ||
           item.description?.toLowerCase().includes(searchLower) ||
           item.category?.toLowerCase().includes(searchLower) ||
-          item.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+          item.tags?.some((tag) => tag.toLowerCase().includes(searchLower))
       )
     }
 
@@ -82,20 +82,23 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
   }, [query.data?.items, filters.search, filters.priority])
 
   const updateSearchFilter = useCallback((search: string) => {
-    setFilters(prev => ({ ...prev, search }))
+    setFilters((prev) => ({ ...prev, search }))
   }, [])
 
   const updateStatusFilter = useCallback((status: string | undefined) => {
-    setFilters(prev => ({ ...prev, status }))
+    setFilters((prev) => ({ ...prev, status }))
   }, [])
 
   const updatePriorityFilter = useCallback((priority: string | undefined) => {
-    setFilters(prev => ({ ...prev, priority }))
+    setFilters((prev) => ({ ...prev, priority }))
   }, [])
 
-  const updateDateRangeFilter = useCallback((dateRange: { from: string; to: string } | undefined) => {
-    setFilters(prev => ({ ...prev, dateRange }))
-  }, [])
+  const updateDateRangeFilter = useCallback(
+    (dateRange: { from: string; to: string } | undefined) => {
+      setFilters((prev) => ({ ...prev, dateRange }))
+    },
+    []
+  )
 
   const clearAllFilters = useCallback(() => {
     setFilters({
@@ -106,20 +109,26 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
     })
   }, [])
 
-  const updateSort = useCallback((sortBy: string, order: 'asc' | 'desc') => {
-    query.updateSort({ sort_by: sortBy, order })
-  }, [query])
+  const updateSort = useCallback(
+    (sortBy: string, order: 'asc' | 'desc') => {
+      query.updateSort({ sort_by: sortBy, order })
+    },
+    [query]
+  )
 
-  const updatePagination = useCallback((pagination: Partial<PaginationParams>) => {
-    query.updatePagination(pagination)
-  }, [query])
+  const updatePagination = useCallback(
+    (pagination: Partial<PaginationParams>) => {
+      query.updatePagination(pagination)
+    },
+    [query]
+  )
 
   const toggleItemSelection = useCallback((item: TestCaseListResponse, checked: boolean) => {
-    setSelectedItems(prev => {
+    setSelectedItems((prev) => {
       if (checked) {
         return [...prev, item]
       } else {
-        return prev.filter(selected => selected.id !== item.id)
+        return prev.filter((selected) => selected.id !== item.id)
       }
     })
   }, [])
@@ -133,7 +142,7 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
   }, [])
 
   const toggleColumnVisibility = useCallback((columnKey: string) => {
-    setColumnVisibility(prev => ({
+    setColumnVisibility((prev) => ({
       ...prev,
       [columnKey]: !prev[columnKey],
     }))
@@ -142,9 +151,9 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
   const hasActiveFilters = useMemo(() => {
     return Boolean(
       filters.search ||
-      filters.status ||
-      filters.priority ||
-      (filters.dateRange && (filters.dateRange.from || filters.dateRange.to))
+        filters.status ||
+        filters.priority ||
+        (filters.dateRange && (filters.dateRange.from || filters.dateRange.to))
     )
   }, [filters])
 
@@ -152,14 +161,14 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
     data: filteredData,
     loading: query.isLoading,
     error: query.error,
-    
+
     pagination: {
       currentPage: query.params.pagination?.page || 1,
       totalPages: query.data?.pages || 1,
       totalItems: query.data?.total || 0,
       itemsPerPage: query.params.pagination?.limit || 50,
     },
-    
+
     filters,
     updateSearchFilter,
     updateStatusFilter,
@@ -167,27 +176,27 @@ export function useTestCaseFilters(options: UseTestCaseFiltersOptions = {}) {
     updateDateRangeFilter,
     clearAllFilters,
     hasActiveFilters,
-    
+
     sorting: {
       sortBy: query.params.sort?.sort_by || 'created_at',
       sortOrder: query.params.sort?.order || 'desc',
       updateSort,
     },
-    
+
     updatePagination,
-    
+
     selection: {
       selectedItems,
       toggleItemSelection,
       selectAllItems,
       clearSelection,
     },
-    
+
     columns: {
       visibility: columnVisibility,
       toggleVisibility: toggleColumnVisibility,
     },
-    
+
     refresh: query.refetch,
   }
 }

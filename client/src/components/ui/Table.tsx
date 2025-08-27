@@ -37,55 +37,89 @@ function TableComponent<T>({
   onSort,
   emptyMessage = 'No data available',
   className = '',
-  getItemId
+  getItemId,
 }: TableProps<T>) {
   const selectedIds = new Set(selectedItems.map(getItemId))
-  const isAllSelected = data.length > 0 && data.every(item => selectedIds.has(getItemId(item)))
+  const isAllSelected = data.length > 0 && data.every((item) => selectedIds.has(getItemId(item)))
   const isIndeterminate = selectedIds.size > 0 && !isAllSelected
 
-  const handleSelectAll = useCallback((checked: boolean) => {
-    if (!onSelectionChange) return
-    
-    if (checked) {
-      onSelectionChange([...selectedItems, ...data.filter(item => !selectedIds.has(getItemId(item)))])
-    } else {
-      const dataIds = new Set(data.map(getItemId))
-      onSelectionChange(selectedItems.filter(item => !dataIds.has(getItemId(item))))
-    }
-  }, [onSelectionChange, selectedItems, data, selectedIds, getItemId])
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (!onSelectionChange) return
 
-  const handleSelectItem = useCallback((item: T, checked: boolean) => {
-    if (!onSelectionChange) return
+      if (checked) {
+        onSelectionChange([
+          ...selectedItems,
+          ...data.filter((item) => !selectedIds.has(getItemId(item))),
+        ])
+      } else {
+        const dataIds = new Set(data.map(getItemId))
+        onSelectionChange(selectedItems.filter((item) => !dataIds.has(getItemId(item))))
+      }
+    },
+    [onSelectionChange, selectedItems, data, selectedIds, getItemId]
+  )
 
-    if (checked) {
-      onSelectionChange([...selectedItems, item])
-    } else {
-      onSelectionChange(selectedItems.filter(selectedItem => getItemId(selectedItem) !== getItemId(item)))
-    }
-  }, [onSelectionChange, selectedItems, getItemId])
+  const handleSelectItem = useCallback(
+    (item: T, checked: boolean) => {
+      if (!onSelectionChange) return
 
-  const handleSort = useCallback((key: string) => {
-    if (!onSort) return
+      if (checked) {
+        onSelectionChange([...selectedItems, item])
+      } else {
+        onSelectionChange(
+          selectedItems.filter((selectedItem) => getItemId(selectedItem) !== getItemId(item))
+        )
+      }
+    },
+    [onSelectionChange, selectedItems, getItemId]
+  )
 
-    const newOrder = sortBy === key && sortOrder === 'asc' ? 'desc' : 'asc'
-    onSort(key, newOrder)
-  }, [onSort, sortBy, sortOrder])
+  const handleSort = useCallback(
+    (key: string) => {
+      if (!onSort) return
+
+      const newOrder = sortBy === key && sortOrder === 'asc' ? 'desc' : 'asc'
+      onSort(key, newOrder)
+    },
+    [onSort, sortBy, sortOrder]
+  )
 
   const renderSortIcon = (columnKey: string) => {
     if (sortBy !== columnKey) {
       return (
-        <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        <svg
+          className="w-4 h-4 ml-1 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          />
         </svg>
       )
     }
 
     return sortOrder === 'asc' ? (
-      <svg className="w-4 h-4 ml-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-4 h-4 ml-1 text-blue-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
     ) : (
-      <svg className="w-4 h-4 ml-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-4 h-4 ml-1 text-blue-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
     )
@@ -93,14 +127,19 @@ function TableComponent<T>({
 
   const tableClasses = [
     'min-w-full divide-y divide-gray-200 bg-white shadow rounded-lg overflow-hidden',
-    className
-  ].filter(Boolean).join(' ')
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   if (loading) {
     return (
       <div className={tableClasses}>
         <div className="p-8 text-center" role="status" aria-live="polite">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" aria-hidden="true"></div>
+          <div
+            className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+            aria-hidden="true"
+          ></div>
           <p className="mt-2 text-sm text-gray-500">Loading...</p>
           <span className="sr-only">Loading table data</span>
         </div>
@@ -112,8 +151,19 @@ function TableComponent<T>({
     return (
       <div className={tableClasses}>
         <div className="p-8 text-center" role="status">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
           <p className="mt-2 text-sm text-gray-500">{emptyMessage}</p>
         </div>
@@ -125,11 +175,18 @@ function TableComponent<T>({
     <div className={tableClasses}>
       {/* Desktop Table View */}
       <div className="hidden lg:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200" role="table" aria-label="Test cases table">
+        <table
+          className="min-w-full divide-y divide-gray-200"
+          role="table"
+          aria-label="Test cases table"
+        >
           <thead className="bg-gray-50">
             <tr role="row">
               {selectable && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12" scope="col">
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12"
+                  scope="col"
+                >
                   <Checkbox
                     checked={isAllSelected}
                     indeterminate={isIndeterminate}
@@ -142,7 +199,7 @@ function TableComponent<T>({
                 const alignClasses = {
                   left: 'text-left',
                   center: 'text-center',
-                  right: 'text-right'
+                  right: 'text-right',
                 }
 
                 return (
@@ -197,7 +254,7 @@ function TableComponent<T>({
                     const alignClasses = {
                       left: 'text-left',
                       center: 'text-center',
-                      right: 'text-right'
+                      right: 'text-right',
                     }
 
                     return (
@@ -239,7 +296,7 @@ function TableComponent<T>({
             </span>
           </div>
         )}
-        
+
         {data.map((item, index) => {
           const itemId = getItemId(item)
           const isSelected = selectedIds.has(itemId)
@@ -248,7 +305,9 @@ function TableComponent<T>({
             <div
               key={String(itemId)}
               className={`p-4 rounded-lg border transition-colors ${
-                isSelected ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200 hover:border-gray-300'
+                isSelected
+                  ? 'bg-blue-50 border-blue-200'
+                  : 'bg-white border-gray-200 hover:border-gray-300'
               }`}
               role={selectable ? 'option' : 'article'}
               aria-selected={selectable ? isSelected : undefined}
@@ -263,29 +322,31 @@ function TableComponent<T>({
                   <span className="ml-2 text-sm text-gray-600">Select</span>
                 </div>
               )}
-              
+
               <div className="space-y-3">
-                {columns.filter(col => col.key !== 'actions').map((column) => {
-                  const cellValue = column.key === 'index' ? index + 1 : (item as any)[column.key]
-                  
-                  if (!cellValue && cellValue !== 0) return null
-                  
-                  return (
-                    <div key={String(column.key)} className="flex justify-between items-start">
-                      <span className="text-sm font-medium text-gray-500 min-w-0 flex-shrink-0 w-24">
-                        {column.label}:
-                      </span>
-                      <div className="text-sm text-gray-900 text-right flex-1 min-w-0">
-                        {column.render ? column.render(cellValue, item) : cellValue}
+                {columns
+                  .filter((col) => col.key !== 'actions')
+                  .map((column) => {
+                    const cellValue = column.key === 'index' ? index + 1 : (item as any)[column.key]
+
+                    if (!cellValue && cellValue !== 0) return null
+
+                    return (
+                      <div key={String(column.key)} className="flex justify-between items-start">
+                        <span className="text-sm font-medium text-gray-500 min-w-0 flex-shrink-0 w-24">
+                          {column.label}:
+                        </span>
+                        <div className="text-sm text-gray-900 text-right flex-1 min-w-0">
+                          {column.render ? column.render(cellValue, item) : cellValue}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
-                
+                    )
+                  })}
+
                 {/* Actions always at bottom */}
-                {columns.find(col => col.key === 'actions') && (
+                {columns.find((col) => col.key === 'actions') && (
                   <div className="pt-3 border-t border-gray-100">
-                    {columns.find(col => col.key === 'actions')?.render?.(null, item)}
+                    {columns.find((col) => col.key === 'actions')?.render?.(null, item)}
                   </div>
                 )}
               </div>

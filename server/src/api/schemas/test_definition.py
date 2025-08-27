@@ -13,12 +13,14 @@ class TestCaseBase(BaseModel):
     status: Optional[str] = Field("draft", description="Test case status")
     priority: Optional[str] = Field("medium", description="Test case priority") 
     tags: Optional[List[str]] = Field(None, description="Test case tags")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: Optional[Dict[str, Any]] = Field(None, alias="test_metadata", description="Additional metadata")
     author: Optional[str] = Field(None, max_length=100, description="Test case author")
     category: Optional[str] = Field(None, max_length=100, description="Test case category")
     expected_duration_seconds: Optional[int] = Field(None, ge=0, description="Expected duration in seconds")
     is_automated: bool = Field(True, description="Whether test is automated")
     retry_count: int = Field(0, ge=0, description="Number of retries allowed")
+    
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class TestCaseCreate(TestCaseBase):
@@ -31,12 +33,14 @@ class TestCaseUpdate(BaseModel):
     status: Optional[str] = None
     priority: Optional[str] = None
     tags: Optional[List[str]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = Field(None, alias="test_metadata")
     author: Optional[str] = Field(None, max_length=100)
     category: Optional[str] = Field(None, max_length=100)
     expected_duration_seconds: Optional[int] = Field(None, ge=0)
     is_automated: Optional[bool] = None
     retry_count: Optional[int] = Field(None, ge=0)
+    
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class TestStepBase(BaseModel):
@@ -51,6 +55,8 @@ class TestStepBase(BaseModel):
     timeout_seconds: Optional[int] = Field(30, ge=0, description="Step timeout in seconds")
     is_optional: bool = Field(False, description="Whether step is optional")
     continue_on_failure: bool = Field(False, description="Continue execution if step fails")
+    
+    model_config = {"from_attributes": True}
 
 
 class TestStepCreate(TestStepBase):
@@ -69,6 +75,8 @@ class TestStepUpdate(BaseModel):
     timeout_seconds: Optional[int] = Field(None, ge=0)
     is_optional: Optional[bool] = None
     continue_on_failure: Optional[bool] = None
+    
+    model_config = {"from_attributes": True}
 
 
 class TestStepResponse(TestStepBase, BaseResponse):
@@ -77,6 +85,8 @@ class TestStepResponse(TestStepBase, BaseResponse):
 
 class TestCaseResponse(TestCaseBase, BaseResponse):
     steps: Optional[List[TestStepResponse]] = None
+    
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class TestCaseListResponse(BaseModel):
@@ -95,8 +105,7 @@ class TestCaseListResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class TestSuiteBase(BaseModel):
@@ -106,6 +115,8 @@ class TestSuiteBase(BaseModel):
     configuration: Optional[Dict[str, Any]] = Field(None, description="Suite configuration")
     is_active: bool = Field(True, description="Whether suite is active")
     created_by: Optional[str] = Field(None, max_length=100, description="Suite creator")
+    
+    model_config = {"from_attributes": True}
 
 
 class TestSuiteCreate(TestSuiteBase):
@@ -119,6 +130,8 @@ class TestSuiteUpdate(BaseModel):
     configuration: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
     created_by: Optional[str] = Field(None, max_length=100)
+    
+    model_config = {"from_attributes": True}
 
 
 class TestSuiteResponse(TestSuiteBase, BaseResponse):

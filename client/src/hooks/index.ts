@@ -18,3 +18,7 @@ export {
 
 // Export filter management hook
 export { useTestCaseFilters } from './useTestCaseFilters'
+
+// Export advanced search hooks
+export { useAdvancedSearch } from './useAdvancedSearch'
+export { useDebouncedCallback } from './useDebounce'

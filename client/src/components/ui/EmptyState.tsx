@@ -19,15 +19,10 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   title,
   description,
   action,
-  className = ''
+  className = '',
 }) => {
   const defaultIcon = (
-    <svg
-      className="h-12 w-12 text-gray-400"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
+    <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -39,22 +34,16 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 
   const containerClasses = [
     'flex flex-col items-center justify-center py-12 text-center',
-    className
-  ].filter(Boolean).join(' ')
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div className={containerClasses}>
-      <div className="mb-4">
-        {icon || defaultIcon}
-      </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        {title}
-      </h3>
-      {description && (
-        <p className="text-gray-600 mb-6 max-w-md">
-          {description}
-        </p>
-      )}
+      <div className="mb-4">{icon || defaultIcon}</div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+      {description && <p className="text-gray-600 mb-6 max-w-md">{description}</p>}
       {action && (
         <Button
           variant={action.variant || 'primary'}

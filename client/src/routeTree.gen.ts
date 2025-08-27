@@ -9,157 +9,83 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestsRouteImport } from './routes/tests'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TestsRouteImport } from './routes/tests'
 import { Route as TestsCreateRouteImport } from './routes/tests.create'
+import { Route as TestsNewRouteImport } from './routes/tests.new'
 import { Route as TestsTestIdRouteImport } from './routes/tests.$testId'
 import { Route as TestsTestIdEditRouteImport } from './routes/tests.$testId.edit'
+
+// Create the individual route declarations
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 const TestsRoute = TestsRouteImport.update({
   id: '/tests',
   path: '/tests',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+
+const TestsCreateRoute = TestsCreateRouteImport.update({
+  id: '/tests/create',
+  path: '/tests/create',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TestsCreateRoute = TestsCreateRouteImport.update({
-  id: '/create',
-  path: '/create',
-  getParentRoute: () => TestsRoute,
-} as any)
-const TestsTestIdRoute = TestsTestIdRouteImport.update({
-  id: '/$testId',
-  path: '/$testId',
-  getParentRoute: () => TestsRoute,
-} as any)
-const TestsTestIdEditRoute = TestsTestIdEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => TestsTestIdRoute,
+
+const TestsNewRoute = TestsNewRouteImport.update({
+  id: '/tests/new',
+  path: '/tests/new',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
+const TestsTestIdRoute = TestsTestIdRouteImport.update({
+  id: '/tests/$testId',
+  path: '/tests/$testId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const TestsTestIdEditRoute = TestsTestIdEditRouteImport.update({
+  id: '/tests/$testId/edit',
+  path: '/tests/$testId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+// Create the route tree
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/tests': typeof TestsRouteWithChildren
-  '/tests/$testId': typeof TestsTestIdRouteWithChildren
+  '/tests': typeof TestsRoute
   '/tests/create': typeof TestsCreateRoute
+  '/tests/new': typeof TestsNewRoute
+  '/tests/$testId': typeof TestsTestIdRoute
   '/tests/$testId/edit': typeof TestsTestIdEditRoute
 }
+
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/tests': typeof TestsRouteWithChildren
-  '/tests/$testId': typeof TestsTestIdRouteWithChildren
+  '/tests': typeof TestsRoute
   '/tests/create': typeof TestsCreateRoute
+  '/tests/new': typeof TestsNewRoute
+  '/tests/$testId': typeof TestsTestIdRoute
   '/tests/$testId/edit': typeof TestsTestIdEditRoute
 }
+
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/tests': typeof TestsRouteWithChildren
-  '/tests/$testId': typeof TestsTestIdRouteWithChildren
+  '/tests': typeof TestsRoute
   '/tests/create': typeof TestsCreateRoute
+  '/tests/new': typeof TestsNewRoute
+  '/tests/$testId': typeof TestsTestIdRoute
   '/tests/$testId/edit': typeof TestsTestIdEditRoute
 }
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/tests'
-    | '/tests/$testId'
-    | '/tests/create'
-    | '/tests/$testId/edit'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/tests'
-    | '/tests/$testId'
-    | '/tests/create'
-    | '/tests/$testId/edit'
-  id:
-    | '__root__'
-    | '/'
-    | '/tests'
-    | '/tests/$testId'
-    | '/tests/create'
-    | '/tests/$testId/edit'
-  fileRoutesById: FileRoutesById
-}
-export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  TestsRoute: typeof TestsRouteWithChildren
-}
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/tests': {
-      id: '/tests'
-      path: '/tests'
-      fullPath: '/tests'
-      preLoaderRoute: typeof TestsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tests/create': {
-      id: '/tests/create'
-      path: '/create'
-      fullPath: '/tests/create'
-      preLoaderRoute: typeof TestsCreateRouteImport
-      parentRoute: typeof TestsRoute
-    }
-    '/tests/$testId': {
-      id: '/tests/$testId'
-      path: '/$testId'
-      fullPath: '/tests/$testId'
-      preLoaderRoute: typeof TestsTestIdRouteImport
-      parentRoute: typeof TestsRoute
-    }
-    '/tests/$testId/edit': {
-      id: '/tests/$testId/edit'
-      path: '/edit'
-      fullPath: '/tests/$testId/edit'
-      preLoaderRoute: typeof TestsTestIdEditRouteImport
-      parentRoute: typeof TestsTestIdRoute
-    }
-  }
-}
-
-interface TestsTestIdRouteChildren {
-  TestsTestIdEditRoute: typeof TestsTestIdEditRoute
-}
-
-const TestsTestIdRouteChildren: TestsTestIdRouteChildren = {
-  TestsTestIdEditRoute: TestsTestIdEditRoute,
-}
-
-const TestsTestIdRouteWithChildren = TestsTestIdRoute._addFileChildren(
-  TestsTestIdRouteChildren,
-)
-
-interface TestsRouteChildren {
-  TestsTestIdRoute: typeof TestsTestIdRouteWithChildren
-  TestsCreateRoute: typeof TestsCreateRoute
-}
-
-const TestsRouteChildren: TestsRouteChildren = {
-  TestsTestIdRoute: TestsTestIdRouteWithChildren,
-  TestsCreateRoute: TestsCreateRoute,
-}
-
-const TestsRouteWithChildren = TestsRoute._addFileChildren(TestsRouteChildren)
-
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  TestsRoute: TestsRouteWithChildren,
-}
-export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+export const routeTree = rootRouteImport.addChildren([
+  IndexRoute,
+  TestsRoute,
+  TestsCreateRoute,
+  TestsNewRoute,
+  TestsTestIdRoute,
+  TestsTestIdEditRoute,
+])

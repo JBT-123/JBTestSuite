@@ -46,7 +46,7 @@ export class TestCaseService {
       queryParams.set('author', params.filters.author)
     }
     if (params?.filters?.tags && params.filters.tags.length > 0) {
-      params.filters.tags.forEach(tag => queryParams.append('tags', tag))
+      params.filters.tags.forEach((tag) => queryParams.append('tags', tag))
     }
     if (params?.filters?.created_after) {
       queryParams.set('created_after', params.filters.created_after)
@@ -75,7 +75,7 @@ export class TestCaseService {
   async getTestCase(testId: string, includeSteps: boolean = true): Promise<TestCaseResponse> {
     const queryParams = new URLSearchParams()
     queryParams.set('include_steps', includeSteps.toString())
-    
+
     const url = `${this.basePath}/${testId}?${queryParams.toString()}`
     return apiClient.get<TestCaseResponse>(url)
   }

@@ -15,7 +15,7 @@ const Alert: React.FC<AlertProps> = ({
   message,
   dismissible = false,
   onDismiss,
-  className = ''
+  className = '',
 }) => {
   const typeConfig = {
     success: {
@@ -31,7 +31,7 @@ const Alert: React.FC<AlertProps> = ({
             clipRule="evenodd"
           />
         </svg>
-      )
+      ),
     },
     error: {
       containerClass: 'bg-red-50 border-red-200',
@@ -46,7 +46,7 @@ const Alert: React.FC<AlertProps> = ({
             clipRule="evenodd"
           />
         </svg>
-      )
+      ),
     },
     warning: {
       containerClass: 'bg-yellow-50 border-yellow-200',
@@ -61,7 +61,7 @@ const Alert: React.FC<AlertProps> = ({
             clipRule="evenodd"
           />
         </svg>
-      )
+      ),
     },
     info: {
       containerClass: 'bg-blue-50 border-blue-200',
@@ -76,33 +76,23 @@ const Alert: React.FC<AlertProps> = ({
             clipRule="evenodd"
           />
         </svg>
-      )
-    }
+      ),
+    },
   }
 
   const config = typeConfig[type]
 
-  const alertClasses = [
-    'rounded-md border p-4',
-    config.containerClass,
-    className
-  ].filter(Boolean).join(' ')
+  const alertClasses = ['rounded-md border p-4', config.containerClass, className]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div className={alertClasses} role="alert">
       <div className="flex">
-        <div className={`flex-shrink-0 ${config.iconClass}`}>
-          {config.icon}
-        </div>
+        <div className={`flex-shrink-0 ${config.iconClass}`}>{config.icon}</div>
         <div className="ml-3 flex-1">
-          {title && (
-            <h3 className={`text-sm font-medium ${config.titleClass}`}>
-              {title}
-            </h3>
-          )}
-          <div className={`text-sm ${config.messageClass} ${title ? 'mt-2' : ''}`}>
-            {message}
-          </div>
+          {title && <h3 className={`text-sm font-medium ${config.titleClass}`}>{title}</h3>}
+          <div className={`text-sm ${config.messageClass} ${title ? 'mt-2' : ''}`}>{message}</div>
         </div>
         {dismissible && onDismiss && (
           <div className="ml-auto pl-3">

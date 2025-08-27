@@ -1,23 +1,23 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTestCaseFilters, useDeleteTestCase } from '../hooks'
+import { formatDateTime, TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../api'
 import {
-  formatDateTime,
-  TEST_CASE_STATUS,
-  TEST_CASE_PRIORITY,
-} from '../api'
-import { 
-  Button, 
-  Table, 
-  Loading, 
-  Alert, 
-  EmptyState, 
-  FilterBar,
+  Button,
+  Table,
+  Loading,
+  Alert,
+  EmptyState,
+  AdvancedFilterBar,
   Pagination,
   BulkActions,
   Modal,
+  ResponsiveContainer,
+  ResponsiveStack,
+  ResponsiveTable,
   type TableColumn,
-  type BulkAction 
+  type BulkAction,
+  type SavedSearch,
 } from '../components/ui'
 import { StatusBadge, PriorityBadge } from '../components/test-cases'
 import { exportToCSV, exportToJSON, formatExportFilename } from '../utils/export'
@@ -32,7 +32,7 @@ const STATUS_OPTIONS = [
   { value: TEST_CASE_STATUS.DRAFT, label: 'Draft' },
   { value: TEST_CASE_STATUS.ACTIVE, label: 'Active' },
   { value: TEST_CASE_STATUS.ARCHIVED, label: 'Archived' },
-  { value: TEST_CASE_STATUS.DISABLED, label: 'Disabled' },
+  { value: TEST_CASE_STATUS.INACTIVE, label: 'Inactive' },
 ]
 
 const PRIORITY_OPTIONS = [
@@ -42,7 +42,6 @@ const PRIORITY_OPTIONS = [
   { value: TEST_CASE_PRIORITY.HIGH, label: 'High' },
   { value: TEST_CASE_PRIORITY.CRITICAL, label: 'Critical' },
 ]
-
 
 function Tests() {
   const navigate = useNavigate()
@@ -69,19 +68,14 @@ function Tests() {
   })
 
   const deleteTestCase = useDeleteTestCase()
-  
+
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const [bulkActionLoading, setBulkActionLoading] = useState(false)
-
 
   const handleBulkDelete = async () => {
     setBulkActionLoading(true)
     try {
-      await Promise.all(
-        selection.selectedItems.map(item => 
-          deleteTestCase.mutateAsync(item.id)
-        )
-      )
+      await Promise.all(selection.selectedItems.map((item) => deleteTestCase.mutateAsync(item.id)))
       selection.clearSelection()
     } catch (error) {
       console.error('Bulk delete failed:', error)
@@ -93,7 +87,6 @@ function Tests() {
   const handleBulkStatusChange = async (newStatus: string) => {
     setBulkActionLoading(true)
     try {
-      // This would need an actual bulk update API endpoint
       console.log('Bulk status change to:', newStatus, selection.selectedItems)
       selection.clearSelection()
     } catch (error) {
@@ -101,6 +94,10 @@ function Tests() {
     } finally {
       setBulkActionLoading(false)
     }
+  }
+
+  const handleSavedSearchSelect = (savedSearch: SavedSearch) => {
+    console.log('Selected saved search:', savedSearch)
   }
 
   const handleExportCSV = () => {
@@ -114,7 +111,7 @@ function Tests() {
       { key: 'execution_count' as keyof TestCaseListResponse, label: 'Executions' },
       { key: 'created_at' as keyof TestCaseListResponse, label: 'Created' },
     ]
-    
+
     exportToCSV(
       selection.selectedItems.length > 0 ? selection.selectedItems : items,
       formatExportFilename('test-cases', 'csv'),
@@ -155,13 +152,19 @@ function Tests() {
       label: 'Delete',
       icon: (
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          />
         </svg>
       ),
       variant: 'danger',
       requiresConfirmation: true,
       confirmationTitle: 'Delete Test Cases',
-      confirmationMessage: 'This action cannot be undone. The selected test cases and all their steps will be permanently deleted.',
+      confirmationMessage:
+        'This action cannot be undone. The selected test cases and all their steps will be permanently deleted.',
     },
   ]
 
@@ -184,6 +187,9 @@ function Tests() {
       key: 'name',
       label: 'Name',
       sortable: true,
+      priority: 'high' as const,
+      showOnMobile: true,
+      mobileLabel: 'Test Case',
       render: (_: any, testCase: TestCaseListResponse) => (
         <div>
           <Link
@@ -194,118 +200,129 @@ function Tests() {
             {testCase.name}
           </Link>
           {testCase.description && (
-            <div className="max-w-xs truncate text-sm text-gray-500">
-              {testCase.description}
-            </div>
+            <div className="max-w-xs truncate text-sm text-gray-500">{testCase.description}</div>
           )}
         </div>
-      )
+      ),
     },
     {
       key: 'status',
       label: 'Status',
       sortable: true,
+      priority: 'high' as const,
+      showOnMobile: true,
       render: (_: any, testCase: TestCaseListResponse) => (
         <StatusBadge status={testCase.status || 'unknown'} />
-      )
+      ),
     },
     {
       key: 'priority',
-      label: 'Priority', 
+      label: 'Priority',
       sortable: true,
+      priority: 'medium' as const,
       render: (_: any, testCase: TestCaseListResponse) => (
         <PriorityBadge priority={testCase.priority || 'unknown'} />
-      )
+      ),
     },
     {
       key: 'step_count',
       label: 'Steps',
       sortable: true,
+      priority: 'low' as const,
       render: (_: any, testCase: TestCaseListResponse) => (
-        <span className="text-sm text-gray-900">
-          {testCase.step_count || 0}
-        </span>
-      )
+        <span className="text-sm text-gray-900">{testCase.step_count || 0}</span>
+      ),
     },
     {
       key: 'execution_count',
       label: 'Runs',
       sortable: true,
+      priority: 'low' as const,
       render: (_: any, testCase: TestCaseListResponse) => (
-        <span className="text-sm text-gray-900">
-          {testCase.execution_count || 0}
-        </span>
-      )
+        <span className="text-sm text-gray-900">{testCase.execution_count || 0}</span>
+      ),
     },
     {
       key: 'created_at',
       label: 'Created',
       sortable: true,
+      priority: 'medium' as const,
       render: (_: any, testCase: TestCaseListResponse) => (
-        <span className="text-sm text-gray-900">
-          {formatDateTime(testCase.created_at)}
-        </span>
-      )
+        <span className="text-sm text-gray-900">{formatDateTime(testCase.created_at)}</span>
+      ),
     },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
+      priority: 'low' as const,
       render: (_: any, testCase: TestCaseListResponse) => (
         <div className="flex items-center gap-2">
-          <Link
-            to="/tests/$testId"
-            params={{ testId: testCase.id }}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-            >
+          <Link to="/tests/$testId" params={{ testId: testCase.id }}>
+            <Button variant="outline" size="sm">
               View
             </Button>
           </Link>
-          <Link
-            to="/tests/$testId/edit"
-            params={{ testId: testCase.id }}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-            >
+          <Link to="/tests/$testId/edit" params={{ testId: testCase.id }}>
+            <Button variant="outline" size="sm">
               <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
               </svg>
               Edit
             </Button>
           </Link>
         </div>
-      )
-    }
+      ),
+    },
   ] as TableColumn<TestCaseListResponse>[]
 
-  const visibleColumns = allColumns.filter(column => columnVisibility.visibility[column.key] !== false)
+  const visibleColumns = allColumns.filter(
+    (column) => columnVisibility.visibility[column.key] !== false
+  )
 
   return (
     <div className="py-4 sm:py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <ResponsiveContainer maxWidth="7xl" padding={{ xs: 4, sm: 6, lg: 8 }}>
         {/* Header */}
-        <div className="mb-6 sm:mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <ResponsiveStack
+          direction={{ xs: 'col', lg: 'row' }}
+          gap={4}
+          justify="between"
+          align={{ xs: 'stretch', lg: 'center' }}
+          className="mb-6 sm:mb-8"
+        >
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Test Management</h1>
             <p className="mt-2 text-sm text-gray-600">
               Manage and organize your test cases with powerful filtering and bulk operations
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <ResponsiveStack direction={{ xs: 'col', sm: 'row' }} gap={2}>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowColumnSelector(!showColumnSelector)}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto hidden md:flex"
               aria-label="Toggle column visibility"
             >
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+              <svg
+                className="h-4 w-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                />
               </svg>
               <span className="sm:inline">Columns</span>
             </Button>
@@ -314,20 +331,32 @@ function Tests() {
               className="w-full sm:w-auto"
               aria-label="Create new test case"
             >
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <svg
+                className="h-4 w-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
               <span className="sm:inline">Create Test Case</span>
             </Button>
-          </div>
-        </div>
+          </ResponsiveStack>
+        </ResponsiveStack>
 
         <div className="space-y-4 sm:space-y-6">
-          {/* Filter Bar */}
+          {/* Advanced Filter Bar */}
           <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
-            <FilterBar
+            <AdvancedFilterBar
               searchValue={filters.search}
               onSearchChange={updateSearchFilter}
+              onSavedSearchSelect={handleSavedSearchSelect}
               statusFilter={filters.status}
               onStatusFilterChange={updateStatusFilter}
               priorityFilter={filters.priority}
@@ -337,12 +366,14 @@ function Tests() {
               onClearFilters={clearAllFilters}
               statusOptions={STATUS_OPTIONS}
               priorityOptions={PRIORITY_OPTIONS}
+              showQuickFilters={true}
             />
-            
+
             <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="text-sm text-gray-700" role="status" aria-live="polite">
-                  {pagination.totalItems.toLocaleString()} test case{pagination.totalItems === 1 ? '' : 's'} found
+                  {pagination.totalItems.toLocaleString()} test case
+                  {pagination.totalItems === 1 ? '' : 's'} found
                   {hasActiveFilters && ' (filtered)'}
                 </div>
                 <Button
@@ -353,13 +384,24 @@ function Tests() {
                   className="w-fit"
                   aria-label="Refresh test cases list"
                 >
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg
+                    className="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                   Refresh
                 </Button>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <Button
                   variant="outline"
@@ -369,8 +411,19 @@ function Tests() {
                   className="w-full sm:w-auto"
                   aria-label="Export test cases as CSV file"
                 >
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   Export CSV
                 </Button>
@@ -382,8 +435,19 @@ function Tests() {
                   className="w-full sm:w-auto"
                   aria-label="Export test cases as JSON file"
                 >
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   Export JSON
                 </Button>
@@ -428,8 +492,8 @@ function Tests() {
                       title="No Test Cases Found"
                       description="Get started by creating your first test case."
                       action={{
-                        label: "Create Test Case",
-                        onClick: () => navigate({ to: '/tests/create' })
+                        label: 'Create Test Case',
+                        onClick: () => navigate({ to: '/tests/create' }),
                       }}
                     />
                   </div>
@@ -439,14 +503,14 @@ function Tests() {
                       title="No Results Found"
                       description="Try adjusting your search criteria or clearing filters."
                       action={{
-                        label: "Clear Filters",
+                        label: 'Clear Filters',
                         onClick: clearAllFilters,
                       }}
                     />
                   </div>
                 ) : (
                   <div>
-                    <Table
+                    <ResponsiveTable
                       data={items}
                       columns={visibleColumns}
                       loading={false}
@@ -454,7 +518,7 @@ function Tests() {
                       selectedItems={selection.selectedItems}
                       onSelectionChange={(selectedItems) => {
                         selection.clearSelection()
-                        selectedItems.forEach(item => {
+                        selectedItems.forEach((item) => {
                           selection.toggleItemSelection(item, true)
                         })
                       }}
@@ -463,8 +527,11 @@ function Tests() {
                       onSort={sorting.updateSort}
                       emptyMessage="No test cases found"
                       getItemId={(item) => item.id}
+                      mobileBreakpoint="md"
+                      showMobileCards={true}
+                      compactMode={false}
                     />
-                    
+
                     {pagination.totalPages > 1 && (
                       <div className="p-6 border-t border-gray-200">
                         <Pagination
@@ -494,10 +561,8 @@ function Tests() {
           size="sm"
         >
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Choose which columns to display in the table.
-            </p>
-            
+            <p className="text-sm text-gray-600">Choose which columns to display in the table.</p>
+
             <div className="space-y-3">
               {Object.entries(columnVisibility.visibility).map(([key, visible]) => (
                 <label key={key} className="flex items-center">
@@ -516,7 +581,7 @@ function Tests() {
           </div>
         </Modal>
 
-        {/* Error Alert */}        
+        {/* Error Alert */}
         {deleteTestCase.error && (
           <Alert
             type="error"
@@ -525,7 +590,7 @@ function Tests() {
             className="mt-4"
           />
         )}
-      </div>
+      </ResponsiveContainer>
     </div>
   )
 }
