@@ -7,6 +7,7 @@ Welcome to the comprehensive documentation for JBTestSuite - a full-stack web au
 ### Getting Started
 - [Installation Guide](installation.md) - System requirements and setup instructions
 - [Quick Start Guide](quick-start.md) - Get up and running in 5 minutes
+- [User Guide](user-guide.md) - Complete guide to using all features
 - [Architecture Overview](architecture.md) - System design and component relationships
 
 ### Development
@@ -36,6 +37,7 @@ Welcome to the comprehensive documentation for JBTestSuite - a full-stack web au
 | I want to... | Go to |
 |---------------|--------|
 | **Get started quickly** | [Quick Start Guide](quick-start.md) |
+| **Learn how to use all features** | [User Guide](user-guide.md) |
 | **Understand the architecture** | [Architecture Overview](architecture.md) |
 | **Set up for development** | [Development Setup](development/setup.md) |
 | **Use the API** | [API Documentation](api/README.md) |
