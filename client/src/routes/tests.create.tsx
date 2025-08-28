@@ -158,7 +158,7 @@ function CreateTestCaseComponent() {
           <ResponsiveField label="Test Case Name" error={errors.name} required fullWidth>
             <Input
               value={formData.name}
-              onChange={(value) => updateFormField('name', value)}
+              onChange={(e) => updateFormField('name', e.target.value)}
               placeholder="Enter a descriptive name for your test case"
               error={!!errors.name}
             />
@@ -167,7 +167,7 @@ function CreateTestCaseComponent() {
           <ResponsiveField label="Description" fullWidth>
             <Textarea
               value={formData.description || ''}
-              onChange={(value) => updateFormField('description', value)}
+              onChange={(e) => updateFormField('description', e.target.value)}
               placeholder="Describe what this test case validates"
               rows={3}
             />
@@ -185,7 +185,7 @@ function CreateTestCaseComponent() {
           <ResponsiveField label="Author">
             <Input
               value={formData.author || ''}
-              onChange={(value) => updateFormField('author', value)}
+              onChange={(e) => updateFormField('author', e.target.value)}
               placeholder="Test case author"
             />
           </ResponsiveField>
@@ -213,8 +213,8 @@ function CreateTestCaseComponent() {
             <Input
               type="number"
               value={formData.expected_duration_seconds?.toString() || '120'}
-              onChange={(value) =>
-                updateFormField('expected_duration_seconds', parseInt(value) || 120)
+              onChange={(e) =>
+                updateFormField('expected_duration_seconds', parseInt(e.target.value || '0', 10) || 120)
               }
               min="1"
             />
@@ -224,7 +224,7 @@ function CreateTestCaseComponent() {
             <Input
               type="number"
               value={formData.retry_count.toString()}
-              onChange={(value) => updateFormField('retry_count', parseInt(value) || 3)}
+              onChange={(e) => updateFormField('retry_count', parseInt(e.target.value || '0', 10) || 3)}
               min="0"
               max="10"
             />
@@ -244,7 +244,7 @@ function CreateTestCaseComponent() {
               <div className="flex gap-2">
                 <Input
                   value={tagInput}
-                  onChange={(value) => setTagInput(value)}
+                  onChange={(e) => setTagInput(e.target.value)}
                   placeholder="Add a tag"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
