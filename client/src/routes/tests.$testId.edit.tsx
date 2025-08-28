@@ -49,6 +49,15 @@ const CATEGORY_OPTIONS = [
   { value: 'usability', label: 'Usability' },
 ]
 
+// --- helpers to accept event-style or value-style onChange ---
+const getVal = (v: any) => (v && v.target ? v.target.value : v)
+const getChecked = (v: any) =>
+  typeof v === 'boolean' ? v : !!(v && v.target && v.target.checked)
+const getNum = (v: any, fallback: number) => {
+  const n = parseInt(String(getVal(v) ?? ''), 10)
+  return Number.isFinite(n) ? n : fallback
+}
+
 interface StepWithState extends TestStepFormData {
   id?: string
   temp_id: string
@@ -249,10 +258,8 @@ function EditTestCase() {
     const step = steps[stepIndex]
 
     if (step.isNew) {
-      // Remove new steps completely
       setSteps((prev) => prev.filter((_, index) => index !== stepIndex))
     } else {
-      // Mark existing steps as deleted
       setSteps((prev) =>
         prev.map((s, index) => (index === stepIndex ? { ...s, isDeleted: true } : s))
       )
@@ -288,22 +295,18 @@ function EditTestCase() {
 
     setIsSaving(true)
     try {
-      // Update test case basic info
       await updateTestCase.mutateAsync({
         testId,
         data: formData,
       })
 
-      // Handle step changes
       const visibleSteps = steps.filter((step) => !step.isDeleted)
 
-      // Delete removed steps
       const deletedSteps = steps.filter((step) => step.isDeleted && step.id)
       for (const step of deletedSteps) {
         await deleteStep.mutateAsync({ testId, stepId: step.id! })
       }
 
-      // Update/create steps with new order
       for (let i = 0; i < visibleSteps.length; i++) {
         const step = visibleSteps[i]
         const stepData = {
@@ -321,10 +324,8 @@ function EditTestCase() {
         }
 
         if (step.isNew) {
-          // Create new step
           await createStep.mutateAsync({ testId, stepData })
         } else if (step.isModified || step.id) {
-          // Update existing step (including order changes)
           await updateStep.mutateAsync({
             testId,
             stepId: step.id!,
@@ -448,7 +449,7 @@ function EditTestCase() {
                   <Input
                     label="Test Case Name"
                     value={formData.name || ''}
-                    onChange={(value) => updateFormField('name', value)}
+                    onChange={(v) => updateFormField('name', getVal(v))}
                     error={errors.name}
                     placeholder="Enter a descriptive name for your test case"
                     required
@@ -459,7 +460,7 @@ function EditTestCase() {
                   <Textarea
                     label="Description"
                     value={formData.description || ''}
-                    onChange={(value) => updateFormField('description', value)}
+                    onChange={(v) => updateFormField('description', getVal(v))}
                     placeholder="Describe what this test case validates"
                     rows={3}
                   />
@@ -469,7 +470,7 @@ function EditTestCase() {
                   <Select
                     label="Category"
                     value={formData.category || ''}
-                    onChange={(value) => updateFormField('category', value)}
+                    onChange={(v) => updateFormField('category', getVal(v))}
                     options={CATEGORY_OPTIONS}
                     error={errors.category}
                     placeholder="Select category"
@@ -481,7 +482,7 @@ function EditTestCase() {
                   <Input
                     label="Author"
                     value={formData.author || ''}
-                    onChange={(value) => updateFormField('author', value)}
+                    onChange={(v) => updateFormField('author', getVal(v))}
                     placeholder="Test case author"
                   />
                 </div>
@@ -490,7 +491,7 @@ function EditTestCase() {
                   <Select
                     label="Status"
                     value={formData.status || TEST_CASE_STATUS.DRAFT}
-                    onChange={(value) => updateFormField('status', value)}
+                    onChange={(v) => updateFormField('status', getVal(v))}
                     options={STATUS_OPTIONS}
                   />
                 </div>
@@ -499,7 +500,7 @@ function EditTestCase() {
                   <Select
                     label="Priority"
                     value={formData.priority || TEST_CASE_PRIORITY.MEDIUM}
-                    onChange={(value) => updateFormField('priority', value)}
+                    onChange={(v) => updateFormField('priority', getVal(v))}
                     options={PRIORITY_OPTIONS}
                   />
                 </div>
@@ -509,8 +510,8 @@ function EditTestCase() {
                     label="Expected Duration (seconds)"
                     type="number"
                     value={formData.expected_duration_seconds?.toString() || '120'}
-                    onChange={(e) =>
-                      updateFormField('expected_duration_seconds', parseInt(e.target.value) || 120)
+                    onChange={(v) =>
+                      updateFormField('expected_duration_seconds', getNum(v, 120))
                     }
                     error={errors.expected_duration_seconds}
                     min="1"
@@ -522,7 +523,7 @@ function EditTestCase() {
                     label="Retry Count"
                     type="number"
                     value={formData.retry_count?.toString() || '3'}
-                    onChange={(e) => updateFormField('retry_count', parseInt(e.target.value) || 3)}
+                    onChange={(v) => updateFormField('retry_count', getNum(v, 3))}
                     min="0"
                     max="10"
                   />
@@ -532,7 +533,7 @@ function EditTestCase() {
                   <Checkbox
                     label="Automated Test"
                     checked={formData.is_automated || false}
-                    onChange={(checked) => updateFormField('is_automated', checked)}
+                    onChange={(checked) => updateFormField('is_automated', getChecked(checked))}
                   />
                 </div>
 
@@ -543,7 +544,7 @@ function EditTestCase() {
                     <div className="flex gap-2">
                       <Input
                         value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
+                        onChange={(v) => setTagInput(getVal(v))}
                         placeholder="Add a tag"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
@@ -693,7 +694,7 @@ function EditTestCase() {
                           <Input
                             label="Step Name"
                             value={step.name}
-                            onChange={(value) => updateStepField(stepIndex, 'name', value)}
+                            onChange={(v) => updateStepField(stepIndex, 'name', getVal(v))}
                             error={errors[`step-${index}-name`]}
                             placeholder="Describe this step"
                             required
@@ -704,7 +705,9 @@ function EditTestCase() {
                           <Textarea
                             label="Description"
                             value={step.description}
-                            onChange={(value) => updateStepField(stepIndex, 'description', value)}
+                            onChange={(v) =>
+                              updateStepField(stepIndex, 'description', getVal(v))
+                            }
                             placeholder="Additional details about this step"
                             rows={2}
                           />
@@ -714,7 +717,7 @@ function EditTestCase() {
                           <Select
                             label="Step Type"
                             value={step.step_type}
-                            onChange={(value) => updateStepField(stepIndex, 'step_type', value)}
+                            onChange={(v) => updateStepField(stepIndex, 'step_type', getVal(v))}
                             options={STEP_TYPE_OPTIONS}
                           />
                         </div>
@@ -724,12 +727,8 @@ function EditTestCase() {
                             label="Timeout (seconds)"
                             type="number"
                             value={step.timeout_seconds?.toString() || '30'}
-                            onChange={(e) =>
-                              updateStepField(
-                                stepIndex,
-                                'timeout_seconds',
-                                parseInt(e.target.value) || 30
-                              )
+                            onChange={(v) =>
+                              updateStepField(stepIndex, 'timeout_seconds', getNum(v, 30))
                             }
                             min="1"
                           />
@@ -739,7 +738,7 @@ function EditTestCase() {
                           <Input
                             label="Selector"
                             value={step.selector}
-                            onChange={(value) => updateStepField(stepIndex, 'selector', value)}
+                            onChange={(v) => updateStepField(stepIndex, 'selector', getVal(v))}
                             placeholder="CSS selector, XPath, or element identifier"
                           />
                         </div>
@@ -748,7 +747,7 @@ function EditTestCase() {
                           <Input
                             label="Input Data"
                             value={step.input_data}
-                            onChange={(value) => updateStepField(stepIndex, 'input_data', value)}
+                            onChange={(v) => updateStepField(stepIndex, 'input_data', getVal(v))}
                             placeholder="Data to input or send"
                           />
                         </div>
@@ -757,8 +756,8 @@ function EditTestCase() {
                           <Input
                             label="Expected Result"
                             value={step.expected_result}
-                            onChange={(value) =>
-                              updateStepField(stepIndex, 'expected_result', value)
+                            onChange={(v) =>
+                              updateStepField(stepIndex, 'expected_result', getVal(v))
                             }
                             placeholder="What should happen after this step"
                           />
@@ -768,8 +767,8 @@ function EditTestCase() {
                           <Checkbox
                             label="Optional Step"
                             checked={step.is_optional}
-                            onChange={(checked) =>
-                              updateStepField(stepIndex, 'is_optional', checked)
+                            onChange={(v) =>
+                              updateStepField(stepIndex, 'is_optional', getChecked(v))
                             }
                           />
                         </div>
@@ -778,8 +777,8 @@ function EditTestCase() {
                           <Checkbox
                             label="Continue on Failure"
                             checked={step.continue_on_failure}
-                            onChange={(checked) =>
-                              updateStepField(stepIndex, 'continue_on_failure', checked)
+                            onChange={(v) =>
+                              updateStepField(stepIndex, 'continue_on_failure', getChecked(v))
                             }
                           />
                         </div>
@@ -884,3 +883,5 @@ function EditTestCase() {
     </div>
   )
 }
+
+export default EditTestCase

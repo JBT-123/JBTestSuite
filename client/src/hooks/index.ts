@@ -22,3 +22,20 @@ export { useTestCaseFilters } from './useTestCaseFilters'
 // Export advanced search hooks
 export { useAdvancedSearch } from './useAdvancedSearch'
 export { useDebouncedCallback } from './useDebounce'
+
+// Export accessibility hooks
+export {
+  useKeyboardNavigation,
+  useFocusManagement,
+  useFocusTrap,
+  useAnnouncement,
+  useAriaDescribedBy,
+  useAriaLabelledBy,
+  useRovingTabIndex,
+  useMediaQuery,
+  usePrefersReducedMotion,
+  usePrefersHighContrast,
+  usePrefersDarkMode,
+  useScreenReader,
+  useElementSize,
+} from './useAccessibility'

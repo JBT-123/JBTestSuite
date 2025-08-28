@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useRef, useCallback } from 'react'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline'
@@ -7,6 +7,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   leftIcon?: React.ReactNode
   rightIcon?: React.ReactNode
   fullWidth?: boolean
+  withRipple?: boolean
+  withHoverLift?: boolean
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -18,23 +20,58 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       leftIcon,
       rightIcon,
       fullWidth = false,
+      withRipple = false,
+      withHoverLift = false,
       children,
       disabled,
       className = '',
+      onClick,
       ...props
     },
     ref
   ) => {
+    const rippleRef = useRef<HTMLDivElement>(null)
+
+    const createRipple = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+      if (!withRipple || !rippleRef.current) return
+
+      const button = event.currentTarget
+      const rect = button.getBoundingClientRect()
+      const x = event.clientX - rect.left
+      const y = event.clientY - rect.top
+
+      const ripple = document.createElement('div')
+      ripple.className = 'animate-ripple absolute rounded-full bg-white bg-opacity-30 pointer-events-none'
+      ripple.style.left = `${x - 10}px`
+      ripple.style.top = `${y - 10}px`
+      ripple.style.width = '20px'
+      ripple.style.height = '20px'
+
+      rippleRef.current.appendChild(ripple)
+
+      setTimeout(() => {
+        if (rippleRef.current && ripple.parentNode) {
+          rippleRef.current.removeChild(ripple)
+        }
+      }, 600)
+    }, [withRipple])
+
+    const handleClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+      if (!disabled && !loading) {
+        createRipple(event)
+        onClick?.(event)
+      }
+    }, [disabled, loading, createRipple, onClick])
+
     const baseClasses =
-      'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed'
+      'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed relative overflow-hidden'
 
     const variantClasses = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800',
-      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300',
-      danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
-      ghost: 'text-gray-700 hover:bg-gray-100 active:bg-gray-200',
-      outline:
-        'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100',
+      primary: `bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${withHoverLift ? 'hover:-translate-y-0.5 hover:shadow-lg' : ''}`,
+      secondary: `bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 ${withHoverLift ? 'hover:-translate-y-0.5 hover:shadow-md' : ''}`,
+      danger: `bg-red-600 text-white hover:bg-red-700 active:bg-red-800 ${withHoverLift ? 'hover:-translate-y-0.5 hover:shadow-lg' : ''}`,
+      ghost: `text-gray-700 hover:bg-gray-100 active:bg-gray-200 ${withHoverLift ? 'hover:-translate-y-0.5' : ''}`,
+      outline: `border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100 ${withHoverLift ? 'hover:-translate-y-0.5 hover:shadow-md' : ''}`,
     }
 
     const sizeClasses = {
@@ -56,7 +93,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       .join(' ')
 
     return (
-      <button ref={ref} disabled={disabled || loading} className={classes} {...props}>
+      <button 
+        ref={ref} 
+        type="button"
+        disabled={disabled || loading} 
+        className={classes} 
+        onClick={handleClick}
+        {...props}
+      >
+        {withRipple && <div ref={rippleRef} className="absolute inset-0" />}
+        
         {loading ? (
           <>
             <svg
@@ -86,13 +132,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           <>
             {leftIcon && (
-              <span className="mr-2" aria-hidden="true">
+              <span className="mr-2 transition-transform duration-200" aria-hidden="true">
                 {leftIcon}
               </span>
             )}
-            {children}
+            <span className="relative z-10">{children}</span>
             {rightIcon && (
-              <span className="ml-2" aria-hidden="true">
+              <span className="ml-2 transition-transform duration-200" aria-hidden="true">
                 {rightIcon}
               </span>
             )}
