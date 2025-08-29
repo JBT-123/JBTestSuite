@@ -55,7 +55,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <div className="relative">
           <select ref={ref} id={selectId} className={selectClasses} {...props}>
             {placeholder && (
-              <option value="" disabled>
+              <option key="__placeholder" value="" disabled>
                 {placeholder}
               </option>
             )}

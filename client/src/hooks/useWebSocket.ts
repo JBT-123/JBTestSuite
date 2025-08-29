@@ -22,6 +22,24 @@ export type TestExecutionEvent = {
   result_summary?: string
   error_message?: string
   message?: string
+  ai_analysis?: {
+    screenshot_path: string
+    analysis: {
+      interactive_elements: string[]
+      test_suggestions: string[]
+      potential_issues: string[]
+    }
+    timestamp: string
+  }
+  final_ai_analysis?: {
+    execution_result_analysis: {
+      overall_status: string
+      key_findings: string[]
+      performance_insights: any
+      improvement_suggestions: any[]
+    }
+    timestamp: string
+  }
   timestamp: string
 }
 

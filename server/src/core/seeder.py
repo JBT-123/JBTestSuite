@@ -55,20 +55,22 @@ class DatabaseSeeder:
 
     async def clear_all_data(self):
         """Clear all existing data (use with caution!)"""
+        from sqlalchemy import text
+        
         print("🗑️  Clearing existing data...")
         
         # Delete in reverse dependency order
-        await self.session.execute("DELETE FROM log_entries")
-        await self.session.execute("DELETE FROM screenshots") 
-        await self.session.execute("DELETE FROM test_step_executions")
-        await self.session.execute("DELETE FROM test_executions")
-        await self.session.execute("DELETE FROM test_runs")
-        await self.session.execute("DELETE FROM test_suite_test_cases")
-        await self.session.execute("DELETE FROM test_steps")
-        await self.session.execute("DELETE FROM test_cases")
-        await self.session.execute("DELETE FROM test_suites")
-        await self.session.execute("DELETE FROM browser_configurations")
-        await self.session.execute("DELETE FROM test_environments")
+        await self.session.execute(text("DELETE FROM log_entries"))
+        await self.session.execute(text("DELETE FROM screenshots"))
+        await self.session.execute(text("DELETE FROM test_step_executions"))
+        await self.session.execute(text("DELETE FROM test_executions"))
+        await self.session.execute(text("DELETE FROM test_runs"))
+        await self.session.execute(text("DELETE FROM test_suite_test_cases"))
+        await self.session.execute(text("DELETE FROM test_steps"))
+        await self.session.execute(text("DELETE FROM test_cases"))
+        await self.session.execute(text("DELETE FROM test_suites"))
+        await self.session.execute(text("DELETE FROM browser_configurations"))
+        await self.session.execute(text("DELETE FROM test_environments"))
         
         await self.session.commit()
 
@@ -615,7 +617,9 @@ class DatabaseSeeder:
 
 async def seed_database(clear_existing: bool = False):
     """Main function to seed the database"""
-    async with get_async_session() as session:
+    from src.core.database import AsyncSessionLocal
+    
+    async with AsyncSessionLocal() as session:
         seeder = DatabaseSeeder(session)
         created_objects = await seeder.seed_all(clear_existing=clear_existing)
         

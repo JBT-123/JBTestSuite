@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useWebSocket, TestExecutionEvent } from '../../hooks/useWebSocket'
 import Button from '../ui/Button'
 import Loading from '../ui/Loading'
+import AIInsightsPanel from './AIInsightsPanel'
 
 interface ExecutionState {
   executionId: string | null
@@ -43,9 +44,20 @@ export default function TestExecutionPanel({
   })
 
   const [executionLog, setExecutionLog] = useState<TestExecutionEvent[]>([])
+  const [aiAnalyses, setAiAnalyses] = useState<any[]>([])
+  const [finalAiAnalysis, setFinalAiAnalysis] = useState<any>(null)
 
   const handleTestExecutionEvent = (event: TestExecutionEvent) => {
     setExecutionLog(prev => [...prev, event])
+
+    // Handle AI analysis data
+    if (event.ai_analysis) {
+      setAiAnalyses(prev => [...prev, event.ai_analysis])
+    }
+    
+    if (event.final_ai_analysis) {
+      setFinalAiAnalysis(event.final_ai_analysis)
+    }
 
     switch (event.type) {
       case 'test_execution_queued':
@@ -128,6 +140,8 @@ export default function TestExecutionPanel({
     if (!testCaseId || !isConnected) return
     
     setExecutionLog([])
+    setAiAnalyses([])
+    setFinalAiAnalysis(null)
     setExecutionState(prev => ({
       ...prev,
       status: 'queued',
@@ -295,6 +309,12 @@ export default function TestExecutionPanel({
           </div>
         </div>
       )}
+
+      {/* AI Insights Panel */}
+      <AIInsightsPanel 
+        aiAnalyses={aiAnalyses} 
+        finalAnalysis={finalAiAnalysis} 
+      />
 
       {/* Execution Log */}
       {executionLog.length > 0 && (

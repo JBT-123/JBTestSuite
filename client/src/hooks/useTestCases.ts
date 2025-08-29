@@ -70,8 +70,13 @@ export function useCreateTestCase() {
   return useMutation<TestCaseResponse, ApiError, TestCaseCreate>({
     mutationFn: (data: TestCaseCreate) => testCaseService.createTestCase(data),
     onSuccess: () => {
-      // Invalidate and refetch test cases list
-      queryClient.invalidateQueries({ queryKey: testCaseService.getQueryKeys().lists() })
+      // Invalidate and refetch test cases list - use predicate to match all list queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[]
+          return queryKey.length >= 2 && queryKey[0] === 'testCases' && queryKey[1] === 'list'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to create test case:', error)
@@ -91,7 +96,12 @@ export function useUpdateTestCase() {
         updatedTestCase
       )
       // Invalidate lists to reflect changes
-      queryClient.invalidateQueries({ queryKey: testCaseService.getQueryKeys().lists() })
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[]
+          return queryKey.length >= 2 && queryKey[0] === 'testCases' && queryKey[1] === 'list'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to update test case:', error)
@@ -109,7 +119,12 @@ export function useDeleteTestCase() {
       queryClient.removeQueries({ queryKey: testCaseService.getQueryKeys().detail(testId) })
       queryClient.removeQueries({ queryKey: testCaseService.getQueryKeys().steps(testId) })
       // Invalidate lists
-      queryClient.invalidateQueries({ queryKey: testCaseService.getQueryKeys().lists() })
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[]
+          return queryKey.length >= 2 && queryKey[0] === 'testCases' && queryKey[1] === 'list'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to delete test case:', error)
@@ -124,7 +139,12 @@ export function useBulkCreateTestCases() {
     mutationFn: (testsData: TestCaseCreate[]) => testCaseService.bulkCreateTestCases(testsData),
     onSuccess: () => {
       // Invalidate lists to show new test cases
-      queryClient.invalidateQueries({ queryKey: testCaseService.getQueryKeys().lists() })
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[]
+          return queryKey.length >= 2 && queryKey[0] === 'testCases' && queryKey[1] === 'list'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to bulk create test cases:', error)

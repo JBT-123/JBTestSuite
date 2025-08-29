@@ -33,7 +33,6 @@ function TestCaseDetail() {
   const deleteTestCase = useDeleteTestCase()
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [showExecuteModal, setShowExecuteModal] = useState(false)
 
   const handleDelete = async () => {
     try {
@@ -57,8 +56,7 @@ function TestCaseDetail() {
   }
 
   const handleExecute = () => {
-    // TODO: Implement test execution in future phase
-    setShowExecuteModal(true)
+    navigate({ to: `/tests/${testId}/execute` })
   }
 
   const stepColumns: TableColumn<TestStepResponse>[] = [
@@ -502,25 +500,6 @@ function TestCaseDetail() {
           </div>
         </Modal>
 
-        {/* Execute Test Modal */}
-        <Modal
-          isOpen={showExecuteModal}
-          onClose={() => setShowExecuteModal(false)}
-          title="Execute Test Case"
-          size="sm"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Test execution will be available in a future release. This feature is coming soon!
-            </p>
-
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => setShowExecuteModal(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </Modal>
 
         {/* Error Alert */}
         {deleteTestCase.error && (

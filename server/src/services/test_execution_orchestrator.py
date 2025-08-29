@@ -9,6 +9,7 @@ from pathlib import Path
 import json
 
 from ..selenium.webdriver_manager import webdriver_manager, ElementInteractionResult, NavigationResult
+from ..ai.openai_service import openai_service
 from ..api.websockets import (
     notify_test_execution_started,
     notify_test_execution_progress, 
@@ -168,7 +169,9 @@ class TestExecutionOrchestrator:
             "started_at": context.started_at.isoformat() if context.started_at else None,
             "completed_at": context.completed_at.isoformat() if context.completed_at else None,
             "error_message": context.error_message,
-            "screenshots": context.screenshots
+            "screenshots": context.screenshots,
+            "ai_analyses": getattr(context, 'ai_analyses', []),
+            "final_ai_analysis": getattr(context, 'final_ai_analysis', None)
         }
     
     async def _execution_worker(self):
@@ -243,6 +246,9 @@ class TestExecutionOrchestrator:
             context.status = ExecutionStatus.COMPLETED
             context.completed_at = datetime.utcnow()
             
+            # Analyze execution result with AI (non-blocking)
+            asyncio.create_task(self._analyze_execution_result_with_ai(context))
+            
             await notify_test_execution_completed(
                 execution_id,
                 context.test_case_id,
@@ -256,6 +262,9 @@ class TestExecutionOrchestrator:
             context.status = ExecutionStatus.FAILED
             context.completed_at = datetime.utcnow()
             context.error_message = str(e)
+            
+            # Analyze failed execution result with AI (non-blocking)
+            asyncio.create_task(self._analyze_execution_result_with_ai(context))
             
             await notify_test_execution_error(
                 execution_id,
@@ -285,6 +294,10 @@ class TestExecutionOrchestrator:
                 )
                 if result.screenshot_path:
                     context.screenshots.append(result.screenshot_path)
+                    # Analyze screenshot with AI (non-blocking)
+                    asyncio.create_task(self._analyze_screenshot_with_ai(
+                        context, result.screenshot_path, step.description
+                    ))
                 
                 if not result.success:
                     context.error_message = result.message
@@ -300,6 +313,10 @@ class TestExecutionOrchestrator:
                 )
                 if result.screenshot_path:
                     context.screenshots.append(result.screenshot_path)
+                    # Analyze screenshot with AI (non-blocking)
+                    asyncio.create_task(self._analyze_screenshot_with_ai(
+                        context, result.screenshot_path, step.description
+                    ))
                 
                 if not result.success:
                     context.error_message = result.message
@@ -316,6 +333,10 @@ class TestExecutionOrchestrator:
                 )
                 if result.screenshot_path:
                     context.screenshots.append(result.screenshot_path)
+                    # Analyze screenshot with AI (non-blocking)
+                    asyncio.create_task(self._analyze_screenshot_with_ai(
+                        context, result.screenshot_path, step.description
+                    ))
                 
                 if not result.success:
                     context.error_message = result.message
@@ -332,6 +353,10 @@ class TestExecutionOrchestrator:
                 )
                 if screenshot_path:
                     context.screenshots.append(screenshot_path)
+                    # Analyze screenshot with AI (non-blocking)
+                    asyncio.create_task(self._analyze_screenshot_with_ai(
+                        context, screenshot_path, step.description
+                    ))
             
             elif step.step_type == StepType.VERIFY:
                 result = await webdriver_manager.find_element_and_interact(
@@ -343,6 +368,10 @@ class TestExecutionOrchestrator:
                 )
                 if result.screenshot_path:
                     context.screenshots.append(result.screenshot_path)
+                    # Analyze screenshot with AI (non-blocking)
+                    asyncio.create_task(self._analyze_screenshot_with_ai(
+                        context, result.screenshot_path, step.description
+                    ))
                 
                 if not result.success:
                     context.error_message = result.message
@@ -357,6 +386,94 @@ class TestExecutionOrchestrator:
             context.error_message = f"Error in step {step.step_number}: {str(e)}"
             logger.error(f"Step execution error: {e}")
             return False
+    
+    async def _analyze_screenshot_with_ai(self, context: ExecutionContext, screenshot_path: str, step_description: str = None) -> Optional[Dict[str, Any]]:
+        """
+        Analyze a screenshot using AI and store the results in the execution context.
+        This is called automatically after screenshots are taken.
+        """
+        if not openai_service.is_enabled():
+            logger.info("AI analysis skipped - OpenAI service not enabled")
+            return None
+        
+        try:
+            # Create context for AI analysis
+            ai_context = f"Test execution step: {step_description}" if step_description else "Test execution screenshot"
+            
+            # Analyze the screenshot
+            result = await openai_service.analyze_screenshot(screenshot_path, ai_context)
+            
+            if result["success"]:
+                # Store AI analysis in context for later use
+                if not hasattr(context, 'ai_analyses'):
+                    context.ai_analyses = []
+                
+                analysis_data = {
+                    "screenshot_path": screenshot_path,
+                    "step_description": step_description,
+                    "analysis": result["analysis"],
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "usage": result.get("usage")
+                }
+                context.ai_analyses.append(analysis_data)
+                
+                logger.info(f"AI analysis completed for screenshot: {screenshot_path}")
+                return analysis_data
+            else:
+                logger.warning(f"AI analysis failed: {result.get('error')}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error in AI screenshot analysis: {e}")
+            return None
+    
+    async def _analyze_execution_result_with_ai(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+        """
+        Analyze the complete test execution result using AI to provide insights.
+        This is called after test execution is completed.
+        """
+        if not openai_service.is_enabled():
+            logger.info("AI result analysis skipped - OpenAI service not enabled")
+            return None
+        
+        try:
+            # Prepare execution result data for AI analysis
+            execution_data = {
+                "execution_id": context.execution_id,
+                "test_case_name": getattr(context, 'test_case_name', 'Unknown'),
+                "status": context.status.value,
+                "total_steps": len(context.steps),
+                "current_step": context.current_step,
+                "started_at": context.started_at.isoformat() if context.started_at else None,
+                "completed_at": context.completed_at.isoformat() if context.completed_at else None,
+                "duration_seconds": (context.completed_at - context.started_at).total_seconds() if context.started_at and context.completed_at else None,
+                "error_message": context.error_message,
+                "screenshot_count": len(context.screenshots),
+                "ai_analyses_count": len(getattr(context, 'ai_analyses', []))
+            }
+            
+            # Analyze with AI
+            result = await openai_service.analyze_test_result(execution_data)
+            
+            if result["success"]:
+                analysis_data = {
+                    "execution_result_analysis": result["insights"],
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "usage": result.get("usage")
+                }
+                
+                # Store in context
+                context.final_ai_analysis = analysis_data
+                
+                logger.info(f"AI execution analysis completed for: {context.execution_id}")
+                return analysis_data
+            else:
+                logger.warning(f"AI execution analysis failed: {result.get('error')}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error in AI execution analysis: {e}")
+            return None
     
     async def _parse_test_steps(self, test_case) -> List[TestStep]:
         # This is a simplified parser - in practice, you'd parse from test_case.steps JSON

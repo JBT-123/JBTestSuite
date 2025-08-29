@@ -49,11 +49,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://jbuser:jbpass@postgres:5432/jbtestsuite
-      - SELENIUM_HUB_URL=http://selenium:4444/wd/hub
-      - ENVIRONMENT=development
-      - SECRET_KEY=dev-secret-key-change-in-production
-      - CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+      - DATABASE_URL=${DATABASE_URL}
+      - SELENIUM_HUB_URL=${SELENIUM_HUB_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - SECRET_KEY=${SECRET_KEY}
     volumes:
       - ./server:/app
       - server_artifacts:/app/artifacts
