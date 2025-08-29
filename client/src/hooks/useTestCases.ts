@@ -144,7 +144,12 @@ export function useCreateTestStep() {
       queryClient.invalidateQueries({ queryKey: testCaseService.getQueryKeys().detail(testId) })
     },
     onError: (error) => {
-      console.error('Failed to create test step:', error)
+      console.error('Failed to create test step:', {
+        error,
+        message: error.message,
+        details: error.details,
+        timestamp: new Date().toISOString()
+      })
     },
   })
 }

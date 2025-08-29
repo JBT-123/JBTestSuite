@@ -16,7 +16,7 @@ class ApiClient {
   constructor() {
     this.instance = axios.create({
       baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
-      timeout: 10000,
+      timeout: 30000, // Increased timeout to 30 seconds for slow operations
       headers: {
         'Content-Type': 'application/json',
       },
@@ -53,20 +53,37 @@ class ApiClient {
           return Promise.reject(error)
         }
 
-        // Handle network errors with retry logic
-        if (!error.response && originalRequest && !(originalRequest as any)._retry) {
-          ;(originalRequest as any)._retry = true
+        // Handle network errors with enhanced retry logic
+        if (!error.response && originalRequest && !(originalRequest as any)._retryCount) {
+          ;(originalRequest as any)._retryCount = 0
+        }
 
-          // Retry after 1 second
-          await new Promise((resolve) => setTimeout(resolve, 1000))
+        // Retry network errors up to 3 times with exponential backoff
+        if (
+          (!error.response || error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') && 
+          originalRequest && 
+          (originalRequest as any)._retryCount < 3
+        ) {
+          ;(originalRequest as any)._retryCount = ((originalRequest as any)._retryCount || 0) + 1
+          
+          // Exponential backoff: 1s, 2s, 4s
+          const delay = Math.pow(2, (originalRequest as any)._retryCount - 1) * 1000
+          await new Promise((resolve) => setTimeout(resolve, delay))
+          
+          console.warn(`Retrying request (attempt ${(originalRequest as any)._retryCount}/3) after ${delay}ms:`, originalRequest.url)
           return this.instance(originalRequest)
         }
 
         // Transform error response to consistent format
         const apiError: ApiError = {
-          error: error.response?.data?.error || 'Unknown error',
-          message: error.response?.data?.message || error.message,
-          details: error.response?.data?.details,
+          error: error.response?.data?.error || 'Network error',
+          message: error.response?.data?.message || error.message || 'Connection failed. Please check if the server is running.',
+          details: {
+            ...error.response?.data?.details,
+            code: error.code,
+            status: error.response?.status,
+            retryCount: (originalRequest as any)?._retryCount || 0
+          },
         }
 
         return Promise.reject(apiError)

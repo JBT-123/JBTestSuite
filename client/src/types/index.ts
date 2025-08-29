@@ -58,11 +58,21 @@ export interface TestCaseListResponse {
 }
 
 // Test Step types
+export enum StepType {
+  NAVIGATE = 'navigate',
+  CLICK = 'click',
+  TYPE = 'type',
+  WAIT = 'wait',
+  ASSERT = 'assert',
+  SCREENSHOT = 'screenshot',
+  CUSTOM = 'custom',
+}
+
 export interface TestStepBase {
   order_index: number
   name: string
   description?: string
-  step_type: string
+  step_type: StepType
   selector?: string
   input_data?: string
   expected_result?: string
@@ -78,7 +88,7 @@ export interface TestStepUpdate {
   order_index?: number
   name?: string
   description?: string
-  step_type?: string
+  step_type?: StepType
   selector?: string
   input_data?: string
   expected_result?: string

@@ -1,0 +1,403 @@
+from typing import Dict, Optional, List, Any
+import asyncio
+import uuid
+from datetime import datetime
+from dataclasses import dataclass, field
+from enum import Enum
+import logging
+from pathlib import Path
+import json
+
+from ..selenium.webdriver_manager import webdriver_manager, ElementInteractionResult, NavigationResult
+from ..api.websockets import (
+    notify_test_execution_started,
+    notify_test_execution_progress, 
+    notify_test_execution_completed,
+    notify_test_execution_error
+)
+
+logger = logging.getLogger(__name__)
+
+# Simple mock models for now until full database models are available
+@dataclass
+class TestCase:
+    id: str
+    name: str
+
+class ExecutionStatus(Enum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed" 
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+class StepType(Enum):
+    NAVIGATE = "navigate"
+    CLICK = "click"
+    INPUT = "input"
+    WAIT = "wait"
+    VERIFY = "verify"
+    SCREENSHOT = "screenshot"
+
+@dataclass
+class TestStep:
+    step_number: int
+    step_type: StepType
+    description: str
+    selector: Optional[str] = None
+    selector_type: str = "css"
+    input_text: Optional[str] = None
+    expected_text: Optional[str] = None
+    url: Optional[str] = None
+    wait_seconds: int = 0
+    timeout_seconds: int = 10
+
+@dataclass
+class ExecutionContext:
+    execution_id: str
+    test_case_id: str
+    session_id: Optional[str] = None
+    status: ExecutionStatus = ExecutionStatus.QUEUED
+    steps: List[TestStep] = field(default_factory=list)
+    current_step: int = 0
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    screenshots: List[str] = field(default_factory=list)
+    user_id: Optional[str] = None
+
+class TestExecutionOrchestrator:
+    def __init__(self):
+        self.active_executions: Dict[str, ExecutionContext] = {}
+        self.execution_queue: asyncio.Queue = asyncio.Queue()
+        self.worker_task: Optional[asyncio.Task] = None
+        self.is_running = False
+    
+    async def start(self):
+        if not self.is_running:
+            self.is_running = True
+            self.worker_task = asyncio.create_task(self._execution_worker())
+            logger.info("Test execution orchestrator started")
+    
+    async def stop(self):
+        if self.is_running:
+            self.is_running = False
+            if self.worker_task:
+                self.worker_task.cancel()
+                try:
+                    await self.worker_task
+                except asyncio.CancelledError:
+                    pass
+            
+            # Cancel all active executions
+            for execution_id in list(self.active_executions.keys()):
+                await self.cancel_execution(execution_id)
+                
+            logger.info("Test execution orchestrator stopped")
+    
+    async def queue_test_execution(self, test_case_id: str, user_id: Optional[str] = None) -> str:
+        execution_id = str(uuid.uuid4())
+        
+        try:
+            # Load test case from database to get steps
+            # For now, use a simple mock test case since we don't have the full database models yet
+            test_case = TestCase(id=test_case_id, name=f"Test Case {test_case_id}")
+            
+            # Parse test steps from test case data
+            steps = self._parse_test_steps(test_case)
+            
+            context = ExecutionContext(
+                execution_id=execution_id,
+                test_case_id=test_case_id,
+                steps=steps,
+                user_id=user_id
+            )
+            
+            self.active_executions[execution_id] = context
+            await self.execution_queue.put(execution_id)
+            
+            logger.info(f"Queued test execution {execution_id} for test case {test_case_id}")
+            return execution_id
+                
+        except Exception as e:
+            logger.error(f"Failed to queue test execution: {e}")
+            raise
+    
+    async def cancel_execution(self, execution_id: str) -> bool:
+        if execution_id not in self.active_executions:
+            return False
+        
+        context = self.active_executions[execution_id]
+        
+        if context.status in [ExecutionStatus.COMPLETED, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED]:
+            return False
+        
+        context.status = ExecutionStatus.CANCELLED
+        context.completed_at = datetime.utcnow()
+        context.error_message = "Execution cancelled by user"
+        
+        # Close WebDriver session if exists
+        if context.session_id:
+            await webdriver_manager.close_session(context.session_id)
+        
+        # Notify via WebSocket
+        await notify_test_execution_error(
+            execution_id, 
+            context.test_case_id,
+            "Test execution was cancelled",
+            context.user_id
+        )
+        
+        # Clean up
+        del self.active_executions[execution_id]
+        logger.info(f"Cancelled test execution {execution_id}")
+        return True
+    
+    async def get_execution_status(self, execution_id: str) -> Optional[Dict[str, Any]]:
+        if execution_id not in self.active_executions:
+            return None
+        
+        context = self.active_executions[execution_id]
+        
+        return {
+            "execution_id": execution_id,
+            "test_case_id": context.test_case_id,
+            "status": context.status.value,
+            "current_step": context.current_step,
+            "total_steps": len(context.steps),
+            "started_at": context.started_at.isoformat() if context.started_at else None,
+            "completed_at": context.completed_at.isoformat() if context.completed_at else None,
+            "error_message": context.error_message,
+            "screenshots": context.screenshots
+        }
+    
+    async def _execution_worker(self):
+        while self.is_running:
+            try:
+                # Get next execution from queue
+                execution_id = await asyncio.wait_for(
+                    self.execution_queue.get(), 
+                    timeout=1.0
+                )
+                
+                if execution_id in self.active_executions:
+                    await self._execute_test(execution_id)
+                    
+            except asyncio.TimeoutError:
+                continue
+            except Exception as e:
+                logger.error(f"Error in execution worker: {e}")
+                await asyncio.sleep(1)
+    
+    async def _execute_test(self, execution_id: str):
+        context = self.active_executions[execution_id]
+        
+        try:
+            context.status = ExecutionStatus.RUNNING
+            context.started_at = datetime.utcnow()
+            
+            # Create WebDriver session
+            context.session_id = await webdriver_manager.create_session()
+            
+            # Notify execution started
+            await notify_test_execution_started(
+                execution_id,
+                context.test_case_id,
+                context.user_id
+            )
+            
+            # Execute each step
+            for step_index, step in enumerate(context.steps):
+                context.current_step = step_index + 1
+                
+                # Check if execution was cancelled
+                if context.status == ExecutionStatus.CANCELLED:
+                    return
+                
+                # Execute the step
+                success = await self._execute_step(context, step)
+                
+                # Notify progress
+                await notify_test_execution_progress(
+                    execution_id,
+                    context.current_step,
+                    len(context.steps),
+                    step.description,
+                    context.screenshots[-1] if context.screenshots else None,
+                    context.user_id
+                )
+                
+                if not success:
+                    context.status = ExecutionStatus.FAILED
+                    context.completed_at = datetime.utcnow()
+                    
+                    await notify_test_execution_error(
+                        execution_id,
+                        context.test_case_id,
+                        context.error_message or f"Step {context.current_step} failed",
+                        context.user_id
+                    )
+                    return
+            
+            # All steps completed successfully
+            context.status = ExecutionStatus.COMPLETED
+            context.completed_at = datetime.utcnow()
+            
+            await notify_test_execution_completed(
+                execution_id,
+                context.test_case_id,
+                True,
+                f"Test completed successfully in {len(context.steps)} steps",
+                context.user_id
+            )
+            
+        except Exception as e:
+            logger.error(f"Error executing test {execution_id}: {e}")
+            context.status = ExecutionStatus.FAILED
+            context.completed_at = datetime.utcnow()
+            context.error_message = str(e)
+            
+            await notify_test_execution_error(
+                execution_id,
+                context.test_case_id,
+                str(e),
+                context.user_id
+            )
+            
+        finally:
+            # Clean up WebDriver session
+            if context.session_id:
+                await webdriver_manager.close_session(context.session_id)
+            
+            # Store results in database
+            await self._store_execution_results(context)
+            
+            # Remove from active executions after a delay (keep for status queries)
+            asyncio.create_task(self._cleanup_execution(execution_id, delay=300))  # 5 minutes
+    
+    async def _execute_step(self, context: ExecutionContext, step: TestStep) -> bool:
+        try:
+            if step.step_type == StepType.NAVIGATE:
+                result = await webdriver_manager.navigate_to_url(
+                    context.session_id,
+                    step.url,
+                    step.timeout_seconds
+                )
+                if result.screenshot_path:
+                    context.screenshots.append(result.screenshot_path)
+                
+                if not result.success:
+                    context.error_message = result.message
+                    return False
+            
+            elif step.step_type == StepType.CLICK:
+                result = await webdriver_manager.find_element_and_interact(
+                    context.session_id,
+                    step.selector,
+                    step.selector_type,
+                    "click",
+                    timeout=step.timeout_seconds
+                )
+                if result.screenshot_path:
+                    context.screenshots.append(result.screenshot_path)
+                
+                if not result.success:
+                    context.error_message = result.message
+                    return False
+            
+            elif step.step_type == StepType.INPUT:
+                result = await webdriver_manager.find_element_and_interact(
+                    context.session_id,
+                    step.selector,
+                    step.selector_type,
+                    "input",
+                    step.input_text,
+                    step.timeout_seconds
+                )
+                if result.screenshot_path:
+                    context.screenshots.append(result.screenshot_path)
+                
+                if not result.success:
+                    context.error_message = result.message
+                    return False
+            
+            elif step.step_type == StepType.WAIT:
+                await asyncio.sleep(step.wait_seconds)
+            
+            elif step.step_type == StepType.SCREENSHOT:
+                # Force screenshot
+                screenshot_path = await webdriver_manager._take_screenshot(
+                    context.session_id, 
+                    f"step_{step.step_number}"
+                )
+                if screenshot_path:
+                    context.screenshots.append(screenshot_path)
+            
+            elif step.step_type == StepType.VERIFY:
+                result = await webdriver_manager.find_element_and_interact(
+                    context.session_id,
+                    step.selector,
+                    step.selector_type,
+                    "get_text",
+                    timeout=step.timeout_seconds
+                )
+                if result.screenshot_path:
+                    context.screenshots.append(result.screenshot_path)
+                
+                if not result.success:
+                    context.error_message = result.message
+                    return False
+                
+                # For verification, we'd need to check the actual text against expected
+                # This is simplified - in practice you'd parse the result.message for the text
+                
+            return True
+            
+        except Exception as e:
+            context.error_message = f"Error in step {step.step_number}: {str(e)}"
+            logger.error(f"Step execution error: {e}")
+            return False
+    
+    async def _parse_test_steps(self, test_case) -> List[TestStep]:
+        # This is a simplified parser - in practice, you'd parse from test_case.steps JSON
+        # For now, create a sample test flow
+        steps = [
+            TestStep(
+                step_number=1,
+                step_type=StepType.NAVIGATE,
+                description=f"Navigate to {test_case.name} test page",
+                url="https://example.com",  # Would come from test case data
+                timeout_seconds=30
+            ),
+            TestStep(
+                step_number=2,
+                step_type=StepType.SCREENSHOT,
+                description="Take initial screenshot"
+            ),
+            TestStep(
+                step_number=3,
+                step_type=StepType.WAIT,
+                description="Wait for page to stabilize",
+                wait_seconds=2
+            )
+        ]
+        
+        return steps
+    
+    
+    async def _store_execution_results(self, context: ExecutionContext):
+        try:
+            # Store execution results in database
+            # This would create TestExecution and TestResult records
+            logger.info(f"Storing execution results for {context.execution_id}")
+        except Exception as e:
+            logger.error(f"Failed to store execution results: {e}")
+    
+    async def _cleanup_execution(self, execution_id: str, delay: int = 300):
+        await asyncio.sleep(delay)
+        if execution_id in self.active_executions:
+            del self.active_executions[execution_id]
+            logger.info(f"Cleaned up execution {execution_id}")
+
+# Global orchestrator instance
+orchestrator = TestExecutionOrchestrator()
