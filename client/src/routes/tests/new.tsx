@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { useCreateTestCase } from '../hooks'
-import { TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../api'
+import { useCreateTestCase } from '../../hooks'
+import { TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../../api'
 import {
   Button,
   Input,
@@ -12,11 +12,11 @@ import {
   ResponsiveContainer,
   ResponsiveFormLayout,
   ResponsiveField,
-} from '../components/ui'
-import type { TestCaseCreate } from '../types'
+} from '../../components/ui'
+import type { TestCaseCreate } from '../../types'
 
-export const Route = createFileRoute('/tests/create')({
-  component: CreateTestCaseComponent,
+export const Route = createFileRoute('/tests/new')({
+  component: CreateTestCaseSimple,
 })
 
 const STATUS_OPTIONS = [
@@ -44,7 +44,7 @@ const CATEGORY_OPTIONS = [
   { value: 'usability', label: 'Usability' },
 ]
 
-function CreateTestCaseComponent() {
+function CreateTestCaseSimple() {
   const navigate = useNavigate()
   const createTestCase = useCreateTestCase()
 
@@ -145,7 +145,7 @@ function CreateTestCaseComponent() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Create New Test Case</h1>
-        <p className="mt-2 text-gray-600">Create a new test case with detailed information</p>
+        <p className="mt-2 text-gray-600">Create a simple test case with basic information</p>
       </div>
 
       {/* Form */}
@@ -158,7 +158,7 @@ function CreateTestCaseComponent() {
           <ResponsiveField label="Test Case Name" error={errors.name} required fullWidth>
             <Input
               value={formData.name}
-              onChange={(e) => updateFormField('name', e.target.value)}
+              onChange={(value) => updateFormField('name', value)}
               placeholder="Enter a descriptive name for your test case"
               error={!!errors.name}
             />
@@ -167,7 +167,7 @@ function CreateTestCaseComponent() {
           <ResponsiveField label="Description" fullWidth>
             <Textarea
               value={formData.description || ''}
-              onChange={(e) => updateFormField('description', e.target.value)}
+              onChange={(value) => updateFormField('description', value)}
               placeholder="Describe what this test case validates"
               rows={3}
             />
@@ -185,7 +185,7 @@ function CreateTestCaseComponent() {
           <ResponsiveField label="Author">
             <Input
               value={formData.author || ''}
-              onChange={(e) => updateFormField('author', e.target.value)}
+              onChange={(value) => updateFormField('author', value)}
               placeholder="Test case author"
             />
           </ResponsiveField>
@@ -213,8 +213,8 @@ function CreateTestCaseComponent() {
             <Input
               type="number"
               value={formData.expected_duration_seconds?.toString() || '120'}
-              onChange={(e) =>
-                updateFormField('expected_duration_seconds', parseInt(e.target.value || '0', 10) || 120)
+              onChange={(value) =>
+                updateFormField('expected_duration_seconds', parseInt(value) || 120)
               }
               min="1"
             />
@@ -224,7 +224,7 @@ function CreateTestCaseComponent() {
             <Input
               type="number"
               value={formData.retry_count.toString()}
-              onChange={(e) => updateFormField('retry_count', parseInt(e.target.value || '0', 10) || 3)}
+              onChange={(value) => updateFormField('retry_count', parseInt(value) || 3)}
               min="0"
               max="10"
             />
@@ -244,7 +244,7 @@ function CreateTestCaseComponent() {
               <div className="flex gap-2">
                 <Input
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  onChange={(value) => setTagInput(value)}
                   placeholder="Add a tag"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {

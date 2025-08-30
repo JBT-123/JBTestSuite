@@ -118,7 +118,13 @@ function ResponsiveTable<T extends Record<string, any>>({
         </div>
 
         {/* Mobile Cards */}
-        <div className="space-y-3">{data.map((item, index) => renderMobileCard(item, index))}</div>
+        <div className="space-y-3">
+          {data.map((item, index) => (
+            <div key={tableProps.getItemId ? tableProps.getItemId(item) : index}>
+              {renderMobileCard(item, index)}
+            </div>
+          ))}
+        </div>
 
         {/* Column Selector Drawer */}
         <ResponsiveDrawer

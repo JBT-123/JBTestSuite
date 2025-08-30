@@ -15,6 +15,7 @@ interface ExecutionState {
   screenshotPath: string | null
   errorMessage: string | null
   resultSummary: string | null
+  lastUpdateTimestamp?: string
 }
 
 interface TestExecutionPanelProps {
@@ -40,7 +41,8 @@ export default function TestExecutionPanel({
     progressPercentage: 0,
     screenshotPath: null,
     errorMessage: null,
-    resultSummary: null
+    resultSummary: null,
+    lastUpdateTimestamp: undefined
   })
 
   const [executionLog, setExecutionLog] = useState<TestExecutionEvent[]>([])
@@ -48,7 +50,99 @@ export default function TestExecutionPanel({
   const [finalAiAnalysis, setFinalAiAnalysis] = useState<any>(null)
 
   const handleTestExecutionEvent = (event: TestExecutionEvent) => {
+    console.log('[TestExecution] Received WebSocket event:', event.type, event)
     setExecutionLog(prev => [...prev, event])
+    
+    // Prevent older events from overriding newer ones
+    const eventTime = new Date(event.timestamp).getTime()
+    
+    setExecutionState(prevState => {
+      const lastUpdateTime = prevState.lastUpdateTimestamp 
+        ? new Date(prevState.lastUpdateTimestamp).getTime() 
+        : 0
+        
+      if (lastUpdateTime > eventTime) {
+        console.log('[TestExecution] Ignoring older event:', event.type, 'Event time:', event.timestamp, 'Last update:', prevState.lastUpdateTimestamp)
+        return prevState
+      }
+      
+      const newState = { ...prevState, lastUpdateTimestamp: event.timestamp }
+      
+      switch (event.type) {
+        case 'test_execution_queued':
+          // Only allow queued state if we're currently idle or if it's a new execution
+          if (prevState.status === 'completed' || prevState.status === 'error') {
+            console.log('[TestExecution] Ignoring queued event - execution already completed/errored')
+            return prevState
+          }
+          console.log('[TestExecution] Setting state to QUEUED')
+          return {
+            ...newState,
+            executionId: event.execution_id || null,
+            testCaseId: event.test_case_id || null,
+            status: 'queued',
+            errorMessage: null
+          }
+          
+        case 'test_execution_started':
+          console.log('[TestExecution] Setting state to RUNNING')
+          return {
+            ...newState,
+            executionId: event.execution_id || null,
+            testCaseId: event.test_case_id || null,
+            status: 'running',
+            currentStep: 0,
+            progressPercentage: 0,
+            errorMessage: null
+          }
+          
+        case 'test_execution_progress':
+          return {
+            ...newState,
+            currentStep: event.step_number || 0,
+            totalSteps: event.total_steps || 0,
+            stepDescription: event.step_description || '',
+            progressPercentage: event.progress_percentage || 0,
+            screenshotPath: event.screenshot_path || prevState.screenshotPath
+          }
+          
+        case 'test_execution_completed':
+          console.log('[TestExecution] Setting state to COMPLETED')
+          const completedState = {
+            ...newState,
+            status: 'completed' as const,
+            resultSummary: event.result_summary || null,
+            progressPercentage: 100
+          }
+          if (event.execution_id) {
+            onExecutionComplete?.(event.success || false, event.execution_id)
+          }
+          return completedState
+          
+        case 'test_execution_error':
+          console.log('[TestExecution] Setting state to ERROR')
+          const errorState = {
+            ...newState,
+            status: 'error' as const,
+            errorMessage: event.error_message || event.message || 'Unknown error occurred'
+          }
+          if (event.error_message) {
+            onExecutionError?.(event.error_message)
+          }
+          return errorState
+          
+        case 'test_execution_cancelled':
+          console.log('[TestExecution] Setting state to CANCELLED')
+          return {
+            ...newState,
+            status: 'cancelled' as const,
+            errorMessage: null
+          }
+          
+        default:
+          return newState
+      }
+    })
 
     // Handle AI analysis data
     if (event.ai_analysis) {
@@ -57,72 +151,6 @@ export default function TestExecutionPanel({
     
     if (event.final_ai_analysis) {
       setFinalAiAnalysis(event.final_ai_analysis)
-    }
-
-    switch (event.type) {
-      case 'test_execution_queued':
-        setExecutionState(prev => ({
-          ...prev,
-          executionId: event.execution_id || null,
-          testCaseId: event.test_case_id || null,
-          status: 'queued',
-          errorMessage: null
-        }))
-        break
-
-      case 'test_execution_started':
-        setExecutionState(prev => ({
-          ...prev,
-          executionId: event.execution_id || null,
-          testCaseId: event.test_case_id || null,
-          status: 'running',
-          currentStep: 0,
-          progressPercentage: 0,
-          errorMessage: null
-        }))
-        break
-
-      case 'test_execution_progress':
-        setExecutionState(prev => ({
-          ...prev,
-          currentStep: event.step_number || 0,
-          totalSteps: event.total_steps || 0,
-          stepDescription: event.step_description || '',
-          progressPercentage: event.progress_percentage || 0,
-          screenshotPath: event.screenshot_path || prev.screenshotPath
-        }))
-        break
-
-      case 'test_execution_completed':
-        setExecutionState(prev => ({
-          ...prev,
-          status: 'completed',
-          resultSummary: event.result_summary || null,
-          progressPercentage: 100
-        }))
-        if (event.execution_id) {
-          onExecutionComplete?.(event.success || false, event.execution_id)
-        }
-        break
-
-      case 'test_execution_error':
-        setExecutionState(prev => ({
-          ...prev,
-          status: 'error',
-          errorMessage: event.error_message || event.message || 'Unknown error occurred'
-        }))
-        if (event.error_message) {
-          onExecutionError?.(event.error_message)
-        }
-        break
-
-      case 'test_execution_cancelled':
-        setExecutionState(prev => ({
-          ...prev,
-          status: 'cancelled',
-          errorMessage: null
-        }))
-        break
     }
   }
 

@@ -8,6 +8,12 @@ import logging
 from pathlib import Path
 import json
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+from ..core.database import AsyncSessionLocal
+from ..models.test_definition import TestCase as DBTestCase, TestStep as DBTestStep
 from ..selenium.webdriver_manager import webdriver_manager, ElementInteractionResult, NavigationResult
 from ..ai.openai_service import openai_service
 from ..api.websockets import (
@@ -18,12 +24,6 @@ from ..api.websockets import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Simple mock models for now until full database models are available
-@dataclass
-class TestCase:
-    id: str
-    name: str
 
 class ExecutionStatus(Enum):
     QUEUED = "queued"
@@ -101,24 +101,31 @@ class TestExecutionOrchestrator:
         
         try:
             # Load test case from database to get steps
-            # For now, use a simple mock test case since we don't have the full database models yet
-            test_case = TestCase(id=test_case_id, name=f"Test Case {test_case_id}")
-            
-            # Parse test steps from test case data
-            steps = self._parse_test_steps(test_case)
-            
-            context = ExecutionContext(
-                execution_id=execution_id,
-                test_case_id=test_case_id,
-                steps=steps,
-                user_id=user_id
-            )
-            
-            self.active_executions[execution_id] = context
-            await self.execution_queue.put(execution_id)
-            
-            logger.info(f"Queued test execution {execution_id} for test case {test_case_id}")
-            return execution_id
+            async with AsyncSessionLocal() as session:
+                query = select(DBTestCase).where(DBTestCase.id == test_case_id).options(
+                    selectinload(DBTestCase.steps)
+                )
+                result = await session.execute(query)
+                test_case = result.scalar_one_or_none()
+                
+                if not test_case:
+                    raise ValueError(f"Test case {test_case_id} not found")
+                
+                # Parse test steps from test case data
+                steps = await self._parse_test_steps(test_case)
+                
+                context = ExecutionContext(
+                    execution_id=execution_id,
+                    test_case_id=test_case_id,
+                    steps=steps,
+                    user_id=user_id
+                )
+                
+                self.active_executions[execution_id] = context
+                await self.execution_queue.put(execution_id)
+                
+                logger.info(f"Queued test execution {execution_id} for test case {test_case_id}")
+                return execution_id
                 
         except Exception as e:
             logger.error(f"Failed to queue test execution: {e}")
@@ -475,29 +482,61 @@ class TestExecutionOrchestrator:
             logger.error(f"Error in AI execution analysis: {e}")
             return None
     
-    async def _parse_test_steps(self, test_case) -> List[TestStep]:
-        # This is a simplified parser - in practice, you'd parse from test_case.steps JSON
-        # For now, create a sample test flow
-        steps = [
-            TestStep(
+    async def _parse_test_steps(self, test_case: DBTestCase) -> List[TestStep]:
+        """Parse test steps from database test case model"""
+        steps = []
+        
+        if not test_case.steps:
+            # If no steps are defined, create a basic navigation test
+            steps.append(TestStep(
                 step_number=1,
                 step_type=StepType.NAVIGATE,
-                description=f"Navigate to {test_case.name} test page",
-                url="https://example.com",  # Would come from test case data
+                description=f"Navigate to test page for {test_case.name}",
+                url="https://example.com",  # Default URL for now
                 timeout_seconds=30
-            ),
-            TestStep(
+            ))
+            steps.append(TestStep(
                 step_number=2,
                 step_type=StepType.SCREENSHOT,
-                description="Take initial screenshot"
-            ),
-            TestStep(
-                step_number=3,
-                step_type=StepType.WAIT,
-                description="Wait for page to stabilize",
-                wait_seconds=2
+                description="Take screenshot of page"
+            ))
+            logger.warning(f"Test case {test_case.id} has no defined steps, using default navigation test")
+            return steps
+        
+        # Convert database steps to execution steps
+        for db_step in sorted(test_case.steps, key=lambda s: s.order_index):
+            step_type_mapping = {
+                'navigate': StepType.NAVIGATE,
+                'click': StepType.CLICK,
+                'input': StepType.INPUT,
+                'wait': StepType.WAIT,
+                'verify': StepType.VERIFY,
+                'screenshot': StepType.SCREENSHOT,
+            }
+            
+            step_type = step_type_mapping.get(db_step.step_type, StepType.SCREENSHOT)
+            
+            # Parse input data if it exists
+            input_data = db_step.input_data or {}
+            if isinstance(input_data, str):
+                try:
+                    input_data = json.loads(input_data)
+                except:
+                    input_data = {}
+            
+            step = TestStep(
+                step_number=db_step.order_index,
+                step_type=step_type,
+                description=db_step.description or f"Step {db_step.order_index}",
+                selector=db_step.selector,
+                selector_type="css",  # Default selector type
+                input_text=input_data.get('text') if step_type == StepType.INPUT else None,
+                expected_text=db_step.expected_result,
+                url=input_data.get('url') if step_type == StepType.NAVIGATE else None,
+                wait_seconds=input_data.get('wait_seconds', 2) if step_type == StepType.WAIT else 0,
+                timeout_seconds=db_step.timeout_seconds or 10
             )
-        ]
+            steps.append(step)
         
         return steps
     

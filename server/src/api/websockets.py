@@ -20,25 +20,40 @@ class ConnectionManager:
         self.connection_metadata: Dict[str, Dict[str, Any]] = {}
     
     async def connect(self, websocket: WebSocket, client_id: str, user_id: Optional[str] = None):
-        await websocket.accept()
-        self.active_connections[client_id] = websocket
-        self.connection_metadata[client_id] = {
-            "user_id": user_id,
-            "connected_at": datetime.utcnow(),
-            "last_heartbeat": datetime.utcnow()
-        }
-        
-        if user_id:
-            if user_id not in self.user_connections:
-                self.user_connections[user_id] = set()
-            self.user_connections[user_id].add(client_id)
-        
-        logger.info(f"WebSocket connected: {client_id} (user: {user_id})")
-        await self.send_personal_message(client_id, {
-            "type": "connection_established",
-            "client_id": client_id,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        try:
+            logger.info(f"Accepting WebSocket connection for client: {client_id}")
+            await websocket.accept()
+            logger.info(f"WebSocket accepted for client: {client_id}")
+            
+            self.active_connections[client_id] = websocket
+            self.connection_metadata[client_id] = {
+                "user_id": user_id,
+                "connected_at": datetime.utcnow(),
+                "last_heartbeat": datetime.utcnow()
+            }
+            
+            if user_id:
+                if user_id not in self.user_connections:
+                    self.user_connections[user_id] = set()
+                self.user_connections[user_id].add(client_id)
+            
+            logger.info(f"WebSocket connected: {client_id} (user: {user_id})")
+            
+            # Temporarily disable initial message to test if it's causing closure
+            # try:
+            #     await self.send_personal_message(client_id, {
+            #         "type": "connection_established",
+            #         "client_id": client_id,
+            #         "timestamp": datetime.utcnow().isoformat()
+            #     })
+            #     logger.info(f"Connection established message sent to: {client_id}")
+            # except Exception as e:
+            #     logger.error(f"Failed to send connection established message to {client_id}: {e}")
+            logger.info(f"Skipping initial message for debugging purposes")
+                
+        except Exception as e:
+            logger.error(f"Error during WebSocket connection setup for {client_id}: {e}")
+            raise
     
     def disconnect(self, client_id: str):
         if client_id in self.active_connections:
@@ -105,21 +120,37 @@ async def websocket_endpoint(
     if not client_id:
         client_id = str(uuid.uuid4())
     
+    # Log origin for debugging
+    origin = websocket.headers.get("origin")
+    logger.info(f"WebSocket connection attempt from origin: {origin}")
+    
+    # Temporarily disable origin checking for debugging
+    # allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173"]
+    # if origin and origin not in allowed_origins:
+    #     logger.warning(f"WebSocket connection rejected from origin: {origin}")
+    #     await websocket.close(code=1008, reason="Origin not allowed")
+    #     return
+    
     try:
         await manager.connect(websocket, client_id, user_id)
+        logger.info(f"Starting message loop for client: {client_id}")
         
         while True:
             try:
                 # Wait for message from client
+                logger.debug(f"Waiting for message from client: {client_id}")
                 data = await websocket.receive_text()
+                logger.debug(f"Received message from {client_id}: {data[:100]}...")
                 message = json.loads(data)
                 
                 # Handle different message types
                 await handle_websocket_message(client_id, message, websocket)
                 
-            except WebSocketDisconnect:
+            except WebSocketDisconnect as e:
+                logger.info(f"WebSocket disconnect for {client_id}: {e}")
                 break
             except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON from client {client_id}")
                 await manager.send_personal_message(client_id, {
                     "type": "error",
                     "message": "Invalid JSON format",
@@ -135,7 +166,10 @@ async def websocket_endpoint(
                 
     except Exception as e:
         logger.error(f"WebSocket connection error for {client_id}: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
     finally:
+        logger.info(f"Cleaning up WebSocket connection for {client_id}")
         manager.disconnect(client_id)
 
 async def handle_websocket_message(client_id: str, message: Dict[str, Any], websocket: WebSocket):
@@ -263,10 +297,13 @@ async def notify_test_execution_started(execution_id: str, test_case_id: str, us
         "timestamp": datetime.utcnow().isoformat()
     }
     
+    logger.info(f"Broadcasting test_execution_started: {execution_id}")
     if user_id:
         await manager.send_to_user(user_id, message)
+        logger.info(f"Sent to user {user_id}")
     else:
         await manager.broadcast(message)
+        logger.info(f"Broadcasted to {len(manager.active_connections)} connections")
 
 async def notify_test_execution_progress(execution_id: str, step_number: int, total_steps: int, 
                                        step_description: str, screenshot_path: Optional[str] = None,
@@ -299,10 +336,13 @@ async def notify_test_execution_completed(execution_id: str, test_case_id: str,
         "timestamp": datetime.utcnow().isoformat()
     }
     
+    logger.info(f"Broadcasting test_execution_completed: {execution_id} (success: {success})")
     if user_id:
         await manager.send_to_user(user_id, message)
+        logger.info(f"Sent to user {user_id}")
     else:
         await manager.broadcast(message)
+        logger.info(f"Broadcasted to {len(manager.active_connections)} connections")
 
 async def notify_test_execution_error(execution_id: str, test_case_id: str, error_message: str,
                                     user_id: Optional[str] = None):

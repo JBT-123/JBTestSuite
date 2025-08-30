@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { testCaseService } from '../api/testCases'
+import { mockApiData, shouldUseMockData } from '../api/mock-data'
 import type {
   TestCaseCreate,
   TestCaseUpdate,
@@ -27,19 +28,41 @@ export function useTestCases(params?: {
 }) {
   return useQuery<PaginatedResponse<TestCaseListResponse>, ApiError>({
     queryKey: testCaseService.getQueryKeys().list(params),
-    queryFn: () => testCaseService.getTestCases(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      try {
+        return await testCaseService.getTestCases(params)
+      } catch (error) {
+        if (shouldUseMockData(error)) {
+          console.warn('API unavailable, using mock data for test cases list')
+          return mockApiData.getTestCases()
+        }
+        throw error
+      }
+    },
+    staleTime: 0, // Always consider data stale for immediate freshness
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnMount: 'always', // Always refetch on component mount
   })
 }
 
 export function useTestCase(testId: string, includeSteps: boolean = true) {
   return useQuery<TestCaseResponse, ApiError>({
     queryKey: testCaseService.getQueryKeys().detail(testId),
-    queryFn: () => testCaseService.getTestCase(testId, includeSteps),
+    queryFn: async () => {
+      try {
+        return await testCaseService.getTestCase(testId, includeSteps)
+      } catch (error) {
+        if (shouldUseMockData(error)) {
+          console.warn(`API unavailable, using mock data for test case ${testId}`)
+          return mockApiData.getTestCase(testId)
+        }
+        throw error
+      }
+    },
     enabled: !!testId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
   })
 }
 
@@ -69,9 +92,18 @@ export function useCreateTestCase() {
 
   return useMutation<TestCaseResponse, ApiError, TestCaseCreate>({
     mutationFn: (data: TestCaseCreate) => testCaseService.createTestCase(data),
-    onSuccess: () => {
-      // Invalidate and refetch test cases list - use predicate to match all list queries
-      queryClient.invalidateQueries({ 
+    onSuccess: (newTestCase) => {
+      // Invalidate all test case related queries for immediate refresh
+      queryClient.invalidateQueries({ queryKey: ['testCases'] })
+      
+      // Also manually update the cache for immediate UI updates
+      queryClient.setQueryData(
+        testCaseService.getQueryKeys().detail(newTestCase.id),
+        newTestCase
+      )
+      
+      // Force refetch of list queries
+      queryClient.refetchQueries({ 
         predicate: (query) => {
           const queryKey = query.queryKey as string[]
           return queryKey.length >= 2 && queryKey[0] === 'testCases' && queryKey[1] === 'list'
@@ -95,8 +127,12 @@ export function useUpdateTestCase() {
         testCaseService.getQueryKeys().detail(updatedTestCase.id),
         updatedTestCase
       )
-      // Invalidate lists to reflect changes
-      queryClient.invalidateQueries({ 
+      
+      // Invalidate all test case queries for complete refresh
+      queryClient.invalidateQueries({ queryKey: ['testCases'] })
+      
+      // Force immediate refetch of list queries
+      queryClient.refetchQueries({ 
         predicate: (query) => {
           const queryKey = query.queryKey as string[]
           return queryKey.length >= 2 && queryKey[0] === 'testCases' && queryKey[1] === 'list'
@@ -118,8 +154,12 @@ export function useDeleteTestCase() {
       // Remove from cache
       queryClient.removeQueries({ queryKey: testCaseService.getQueryKeys().detail(testId) })
       queryClient.removeQueries({ queryKey: testCaseService.getQueryKeys().steps(testId) })
-      // Invalidate lists
-      queryClient.invalidateQueries({ 
+      
+      // Invalidate all test case queries
+      queryClient.invalidateQueries({ queryKey: ['testCases'] })
+      
+      // Force immediate refetch of list queries
+      queryClient.refetchQueries({ 
         predicate: (query) => {
           const queryKey = query.queryKey as string[]
           return queryKey.length >= 2 && queryKey[0] === 'testCases' && queryKey[1] === 'list'

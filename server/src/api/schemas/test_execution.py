@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from .base import BaseResponse
+
+if TYPE_CHECKING:
+    from .artifacts import ScreenshotResponse, LogEntryResponse
 
 
 class TestRunBase(BaseModel):
@@ -57,7 +62,7 @@ class TestRunResponse(TestRunBase, BaseResponse):
 
 
 class TestRunWithExecutionsResponse(TestRunResponse):
-    executions: List["TestExecutionResponse"] = []
+    executions: List[TestExecutionResponse] = []
 
 
 class TestExecutionResponse(TestExecutionBase, BaseResponse):
@@ -69,9 +74,9 @@ class TestExecutionResponse(TestExecutionBase, BaseResponse):
 
 
 class TestExecutionDetailResponse(TestExecutionResponse):
-    step_executions: List["TestStepExecutionResponse"] = []
-    screenshots: List["ScreenshotResponse"] = []
-    log_entries: List["LogEntryResponse"] = []
+    step_executions: List[TestStepExecutionResponse] = []
+    screenshots: List[ScreenshotResponse] = []
+    log_entries: List[LogEntryResponse] = []
 
 
 class TestStepExecutionResponse(BaseResponse):

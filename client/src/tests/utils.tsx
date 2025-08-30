@@ -2,7 +2,6 @@ import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter, createMemoryHistory } from '@tanstack/react-router'
-import { vi } from 'vitest'
 import { routeTree } from '../routeTree.gen'
 import type { TestCaseListResponse } from '../types'
 
@@ -63,9 +62,21 @@ export function renderWithProviders(
   }
 }
 
+// Generate a simple UUID v4 for testing
+const generateUUID = (seed?: number): string => {
+  const s = seed ?? Math.floor(Math.random() * 1000)
+  const baseHex = s.toString(16).padStart(8, '0').slice(0, 8)
+  const part1 = baseHex
+  const part2 = '1234'
+  const part3 = '5678' 
+  const part4 = '9012'
+  const part5 = s.toString(16).padStart(12, '0').slice(-12)
+  return `${part1}-${part2}-${part3}-${part4}-${part5}`
+}
+
 // Mock data factories for testing
 export const createMockTestCase = (overrides: Partial<TestCaseListResponse> = {}): TestCaseListResponse => ({
-  id: 'test-case-1',
+  id: generateUUID(1),
   name: 'Test Login Functionality',
   description: 'Test the user login process with valid credentials',
   status: 'active',
@@ -85,7 +96,7 @@ export const createMockTestCase = (overrides: Partial<TestCaseListResponse> = {}
 export const createMockTestCases = (count: number): TestCaseListResponse[] => {
   return Array.from({ length: count }, (_, index) =>
     createMockTestCase({
-      id: `test-case-${index + 1}`,
+      id: generateUUID(index + 1),
       name: `Test Case ${index + 1}`,
       description: `Description for test case ${index + 1}`,
       priority: index % 3 === 0 ? 'high' : index % 3 === 1 ? 'medium' : 'low',
@@ -155,12 +166,12 @@ export const waitForLoadingToFinish = async () => {
   }
 }
 
-// Mock implementations for hooks
+// Mock implementations for hooks (without vitest functions for production use)
 export const mockUseTestCases = {
   data: createMockTestCases(5),
   isLoading: false,
   error: null,
-  refetch: vi.fn(),
+  refetch: () => Promise.resolve(),
   isRefetching: false,
 }
 
@@ -182,23 +193,23 @@ export const mockUseTestCaseFilters = {
     priority: '',
     dateRange: undefined,
   },
-  updateSearchFilter: vi.fn(),
-  updateStatusFilter: vi.fn(),
-  updatePriorityFilter: vi.fn(),
-  updateDateRangeFilter: vi.fn(),
-  clearAllFilters: vi.fn(),
+  updateSearchFilter: () => {},
+  updateStatusFilter: () => {},
+  updatePriorityFilter: () => {},
+  updateDateRangeFilter: () => {},
+  clearAllFilters: () => {},
   hasActiveFilters: false,
   sorting: {
     sortBy: 'created_at',
     sortOrder: 'desc' as const,
-    updateSort: vi.fn(),
+    updateSort: () => {},
   },
-  updatePagination: vi.fn(),
+  updatePagination: () => {},
   selection: {
     selectedItems: [],
-    selectAllItems: vi.fn(),
-    clearSelection: vi.fn(),
-    toggleItemSelection: vi.fn(),
+    selectAllItems: () => {},
+    clearSelection: () => {},
+    toggleItemSelection: () => {},
   },
   columns: {
     visibility: {
@@ -210,9 +221,9 @@ export const mockUseTestCaseFilters = {
       created_at: true,
       actions: true,
     },
-    toggleVisibility: vi.fn(),
+    toggleVisibility: () => {},
   },
-  refresh: vi.fn(),
+  refresh: () => {},
 }
 
 // Export everything from testing library for convenience

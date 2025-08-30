@@ -6,11 +6,11 @@ import {
   useCreateTestStep,
   useUpdateTestStep,
   useDeleteTestStep,
-} from '../hooks'
-import { TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../api'
-import { Button, Input, Textarea, Select, Checkbox, Alert, Loading, Modal } from '../components/ui'
-import type { TestCaseUpdate, TestStepFormData, TestStepResponse } from '../types'
-import { StepType } from '../types'
+} from '../../../hooks'
+import { TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../../../api'
+import { Button, Input, Textarea, Select, Checkbox, Alert, Loading, Modal } from '../../../components/ui'
+import type { TestCaseUpdate, TestStepFormData, TestStepResponse } from '../../../types'
+import { StepType } from '../../../types'
 
 export const Route = createFileRoute('/tests/$testId/edit')({
   component: EditTestCase,

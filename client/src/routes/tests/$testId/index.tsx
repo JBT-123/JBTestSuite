@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useTestCase, useDeleteTestCase } from '../hooks'
-import { formatDateTime, formatDuration } from '../api'
+import { useTestCase, useDeleteTestCase } from '../../../hooks'
+import { formatDateTime, formatDuration } from '../../../api'
 import {
   Button,
   Loading,
@@ -9,20 +9,14 @@ import {
   Modal,
   Table,
   type TableColumn,
-} from '../components/ui'
-import { StatusBadge, PriorityBadge } from '../components/test-cases'
+} from '../../../components/ui'
+import { StatusBadge, PriorityBadge } from '../../../components/test-cases'
 import { useState } from 'react'
-import type { TestStepResponse } from '../types'
+import type { TestStepResponse } from '../../../types'
 
-export const Route = createFileRoute('/tests/$testId')({
+export const Route = createFileRoute('/tests/$testId/')({
   component: TestCaseDetail,
   validateSearch: (search) => search,
-  beforeLoad: ({ params }) => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(params.testId)) {
-      throw new Error(`Invalid test ID: ${params.testId}`)
-    }
-  },
 })
 
 function TestCaseDetail() {
@@ -56,7 +50,7 @@ function TestCaseDetail() {
   }
 
   const handleExecute = () => {
-    navigate({ to: `/tests/${testId}/execute` })
+    navigate({ to: '/tests/$testId/execute', params: { testId } })
   }
 
   const stepColumns: TableColumn<TestStepResponse>[] = [
@@ -223,7 +217,7 @@ function TestCaseDetail() {
               </svg>
               Clone
             </Button>
-            <Button variant="outline" onClick={() => navigate({ to: `/tests/${testId}/edit` })}>
+            <Button variant="outline" onClick={() => navigate({ to: '/tests/$testId/edit', params: { testId } })}>
               <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -265,7 +259,7 @@ function TestCaseDetail() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate({ to: `/tests/${testId}/edit`, hash: 'steps' })}
+                    onClick={() => navigate({ to: '/tests/$testId/edit', params: { testId }, hash: 'steps' })}
                   >
                     <svg
                       className="h-4 w-4 mr-2"
@@ -299,7 +293,7 @@ function TestCaseDetail() {
                       description="This test case doesn't have any steps yet."
                       action={{
                         label: 'Add First Step',
-                        onClick: () => navigate({ to: `/tests/${testId}/edit`, hash: 'steps' }),
+                        onClick: () => navigate({ to: '/tests/$testId/edit', params: { testId }, hash: 'steps' }),
                       }}
                     />
                   </div>

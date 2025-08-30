@@ -1,26 +1,17 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import TestExecutionDashboard from '../components/test-execution/TestExecutionDashboard'
-import Loading from '../components/ui/Loading'
+import { useTestCase } from '../../../hooks'
+import TestExecutionDashboard from '../../../components/test-execution/TestExecutionDashboard'
+import Loading from '../../../components/ui/Loading'
 
 export const Route = createFileRoute('/tests/$testId/execute')({
-  component: TestExecute
+  component: TestExecute,
 })
 
 function TestExecute() {
   const { testId } = Route.useParams()
   const navigate = useNavigate()
 
-  const { data: testCase, isLoading, error } = useQuery({
-    queryKey: ['test-case', testId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/tests/${testId}`)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch test case: ${response.statusText}`)
-      }
-      return response.json()
-    },
-  })
+  const { data: testCase, isLoading, error } = useTestCase(testId, true)
 
   const handleBack = () => {
     navigate({ to: '/tests/$testId', params: { testId } })

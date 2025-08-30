@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { useTestCaseFilters, useDeleteTestCase } from '../hooks'
-import { formatDateTime, TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../api'
+import { useTestCaseFilters, useDeleteTestCase } from '../../hooks'
+import { formatDateTime, TEST_CASE_STATUS, TEST_CASE_PRIORITY } from '../../api'
 import {
   Button,
   Table,
@@ -18,12 +18,12 @@ import {
   type TableColumn,
   type BulkAction,
   type SavedSearch,
-} from '../components/ui'
-import { StatusBadge, PriorityBadge } from '../components/test-cases'
-import { exportToCSV, exportToJSON, formatExportFilename } from '../utils/export'
-import type { TestCaseListResponse } from '../types'
+} from '../../components/ui'
+import { StatusBadge, PriorityBadge } from '../../components/test-cases'
+import { exportToCSV, exportToJSON, formatExportFilename } from '../../utils/export'
+import type { TestCaseListResponse } from '../../types'
 
-export const Route = createFileRoute('/tests')({
+export const Route = createFileRoute('/tests/')({
   component: Tests,
 })
 
@@ -66,6 +66,11 @@ function Tests() {
     initialPagination: { page: 1, limit: 25 },
     initialSort: { sort_by: 'created_at', order: 'desc' },
   })
+
+  // Debug logging
+  console.log('Tests page - items:', items)
+  console.log('Tests page - loading:', loading)
+  console.log('Tests page - error:', error)
 
 
   const deleteTestCase = useDeleteTestCase()
@@ -196,7 +201,7 @@ function Tests() {
           <Link
             to="/tests/$testId"
             params={{ testId: testCase.id }}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
           >
             {testCase.name}
           </Link>
@@ -259,23 +264,27 @@ function Tests() {
       priority: 'low' as const,
       render: (_: any, testCase: TestCaseListResponse) => (
         <div className="flex items-center gap-2">
-          <Link to="/tests/$testId" params={{ testId: testCase.id }}>
-            <Button variant="outline" size="sm">
-              View
-            </Button>
+          <Link 
+            to="/tests/$testId" 
+            params={{ testId: testCase.id }}
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            View
           </Link>
-          <Link to="/tests/$testId/edit" params={{ testId: testCase.id }}>
-            <Button variant="outline" size="sm">
-              <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-              Edit
-            </Button>
+          <Link 
+            to="/tests/$testId/edit" 
+            params={{ testId: testCase.id }}
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Edit
           </Link>
         </div>
       ),
@@ -347,6 +356,17 @@ function Tests() {
                 />
               </svg>
               <span className="sm:inline">Create Test Case</span>
+            </Button>
+            <Button
+              onClick={() => {
+                console.log('Testing direct navigation to mock test case')
+                navigate({ to: '/tests/$testId', params: { testId: '00000001-1234-5678-9012-000000000001' } })
+              }}
+              variant="outline"
+              className="w-full sm:w-auto"
+              aria-label="Test navigation"
+            >
+              🔧 Test Navigate
             </Button>
           </ResponsiveStack>
         </ResponsiveStack>

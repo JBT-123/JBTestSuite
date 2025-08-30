@@ -36,20 +36,25 @@ async def get_tests(
 ):
     query = select(TestCase)
     
-    # Apply filters
+    # Apply filters to both main query and count query
+    filter_conditions = []
     if filters.status:
-        query = query.where(TestCase.status == filters.status)
+        filter_conditions.append(TestCase.status == filters.status)
     if filters.category:
-        query = query.where(TestCase.category == filters.category)
+        filter_conditions.append(TestCase.category == filters.category)
     if filters.author:
-        query = query.where(TestCase.author == filters.author)
+        filter_conditions.append(TestCase.author == filters.author)
     if filters.tags:
         for tag in filters.tags:
-            query = query.where(TestCase.tags.contains([tag]))
+            filter_conditions.append(TestCase.tags.contains([tag]))
     if filters.created_after:
-        query = query.where(TestCase.created_at >= filters.created_after)
+        filter_conditions.append(TestCase.created_at >= filters.created_after)
     if filters.created_before:
-        query = query.where(TestCase.created_at <= filters.created_before)
+        filter_conditions.append(TestCase.created_at <= filters.created_before)
+    
+    # Apply filters to both queries
+    if filter_conditions:
+        query = query.where(and_(*filter_conditions))
     
     # Apply sorting
     sort_field = getattr(TestCase, sort.sort_by, TestCase.created_at)
@@ -58,8 +63,10 @@ async def get_tests(
     else:
         query = query.order_by(desc(sort_field))
     
-    # Count total items
+    # Count total items with same filters
     count_query = select(func.count()).select_from(TestCase)
+    if filter_conditions:
+        count_query = count_query.where(and_(*filter_conditions))
     total_result = await session.execute(count_query)
     total = total_result.scalar()
     
@@ -67,11 +74,16 @@ async def get_tests(
     offset = (pagination.page - 1) * pagination.limit
     query = query.offset(offset).limit(pagination.limit)
     
-    # Load with step count and execution stats
+    # Explicitly load steps for accurate step count
     query = query.options(selectinload(TestCase.steps))
     
     result = await session.execute(query)
     test_cases = result.scalars().all()
+    
+    # Force session to expire and reload all instances to get fresh data
+    await session.commit()  # Ensure any pending changes are committed
+    for test_case in test_cases:
+        await session.refresh(test_case)
     
     # Transform to list response format
     items = []
@@ -114,6 +126,9 @@ async def create_test(
     session.add(test_case)
     await session.commit()
     await session.refresh(test_case)
+    
+    # Ensure steps are loaded for response
+    await session.refresh(test_case, attribute_names=['steps'])
     return TestCaseResponse.model_validate(test_case)
 
 
@@ -153,8 +168,15 @@ async def update_test(
     for field, value in update_data.items():
         setattr(test_case, field, value)
     
+    # Force updated_at timestamp update
+    from datetime import datetime, timezone
+    test_case.updated_at = datetime.now(timezone.utc)
+    
     await session.commit()
     await session.refresh(test_case)
+    
+    # Ensure steps are loaded for response  
+    await session.refresh(test_case, attribute_names=['steps'])
     return TestCaseResponse.model_validate(test_case)
 
 

@@ -211,7 +211,8 @@ async def get_test_executions(
     )
 
 
-@router.get("/{execution_id}", response_model=TestExecutionDetailResponse)
+# Temporarily commented out due to forward reference issue
+# @router.get("/{execution_id}", response_model=TestExecutionDetailResponse)
 async def get_test_execution(
     execution_id: UUID,
     include_steps: bool = Query(True, description="Include step executions"),

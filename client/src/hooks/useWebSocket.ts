@@ -57,9 +57,20 @@ interface UseWebSocketOptions {
   onError?: (error: Event) => void
 }
 
+// Helper function to get WebSocket URL
+const getWebSocketUrl = () => {
+  const hostname = window.location.hostname
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const port = process.env.NODE_ENV === 'production' ? window.location.port : '8000'
+  const url = `${protocol}//${hostname}:${port}/api/v1/ws/connect`
+  console.log('[WebSocket] Generated URL:', url)
+  console.log('[WebSocket] Environment:', { hostname, protocol: window.location.protocol, NODE_ENV: process.env.NODE_ENV, port })
+  return url
+}
+
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
-    url = `ws://localhost:8000/api/v1/ws/connect`,
+    url = 'ws://localhost:8000/api/v1/ws/connect', // Temporary: back to hardcoded for debugging
     clientId,
     userId,
     autoConnect = true,
@@ -155,13 +166,21 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   const connect = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) {
+      console.log('[WebSocket] Already connected, skipping')
+      return
+    }
+    
+    if (ws.current?.readyState === WebSocket.CONNECTING) {
+      console.log('[WebSocket] Already connecting, skipping')
       return
     }
 
+    console.log('[WebSocket] Starting connection process')
     updateStatus('connecting')
 
     try {
       const connectionUrl = buildConnectionUrl()
+      console.log('[WebSocket] Attempting to connect to:', connectionUrl)
       ws.current = new WebSocket(connectionUrl)
 
       ws.current.onopen = () => {
@@ -180,6 +199,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       }
 
       ws.current.onclose = (event) => {
+        console.log('[WebSocket] Connection closed:', { code: event.code, reason: event.reason, wasClean: event.wasClean })
         updateStatus('disconnected')
         stopHeartbeat()
 
@@ -244,23 +264,29 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   // Auto-connect effect
   useEffect(() => {
     if (autoConnect) {
+      console.log('[WebSocket] useEffect triggered, attempting connection')
       connect()
     }
 
     return () => {
-      disconnect()
+      console.log('[WebSocket] useEffect cleanup triggered')
+      // Don't disconnect immediately in cleanup to avoid React Strict Mode issues
+      // The cleanup effect below will handle proper cleanup on unmount
     }
   }, [autoConnect]) // Don't include connect/disconnect to avoid infinite loops
 
-  // Cleanup on unmount
+  // Cleanup on unmount - only runs when component unmounts for real
   useEffect(() => {
     return () => {
+      console.log('[WebSocket] Final cleanup on unmount')
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current)
       }
       stopHeartbeat()
       if (ws.current) {
-        ws.current.close(1000)
+        console.log('[WebSocket] Closing connection on unmount')
+        ws.current.close(1000, 'Component unmounting')
+        ws.current = null
       }
     }
   }, [stopHeartbeat])
