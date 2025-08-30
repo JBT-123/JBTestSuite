@@ -1,0 +1,94 @@
+{
+  "consistency_verification": {
+    "ui_pattern_compliance": {
+      "score": 85,
+      "assessment": "The UI follows a standard JSON response format with headers and data sections.",
+      "deviations_found": []
+    },
+    "visual_hierarchy": {
+      "header_elements": [
+        "Headers section at the top"
+      ],
+      "main_content": [
+        "JSON data displayed in a structured format"
+      ],
+      "navigation_elements": [],
+      "footer_elements": []
+    },
+    "accessibility_compliance": {
+      "contrast_check": "pass",
+      "text_readability": "Text is clear and readable",
+      "interactive_element_sizing": "N/A",
+      "focus_indicators": []
+    },
+    "cross_browser_indicators": {
+      "rendering_quality": "Good rendering quality observed",
+      "layout_stability": "stable",
+      "potential_compatibility_issues": []
+    }
+  },
+  "exception_detection": {
+    "expected_anomalies": {
+      "loading_indicators": [],
+      "modal_overlays": [],
+      "notification_banners": [],
+      "form_validation_messages": []
+    },
+    "unexpected_anomalies": {
+      "error_states": [],
+      "layout_breaks": [],
+      "missing_content": [],
+      "performance_indicators": []
+    },
+    "anomaly_severity": {
+      "critical": [],
+      "major": [],
+      "minor": [],
+      "informational": []
+    },
+    "recommended_actions": []
+  },
+  "regression_testing_insights": {
+    "critical_test_points": {
+      "primary_user_actions": [],
+      "data_entry_points": [],
+      "navigation_paths": [],
+      "state_change_triggers": []
+    },
+    "automation_selectors": {
+      "robust_selectors": [],
+      "dynamic_elements": [],
+      "wait_conditions": []
+    },
+    "test_prioritization": {
+      "high_impact_areas": [],
+      "change_prone_elements": [],
+      "performance_bottlenecks": [],
+      "visual_regression_zones": []
+    },
+    "historical_context_recommendations": {
+      "baseline_establishment": [],
+      "change_detection_focus": [],
+      "test_case_generation": []
+    }
+  },
+  "technical_analysis": {
+    "page_performance": {
+      "load_completion_indicators": [
+        "Page appears fully loaded"
+      ],
+      "async_content_areas": [],
+      "interactive_readiness": "Page is ready for interaction"
+    },
+    "responsive_design_analysis": {
+      "breakpoint_indicators": [],
+      "mobile_compatibility": [],
+      "tablet_considerations": []
+    },
+    "security_observations": {
+      "authentication_state": "unknown",
+      "sensitive_data_visibility": [],
+      "security_headers_evidence": []
+    }
+  }
+}

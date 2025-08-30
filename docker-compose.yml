@@ -1,0 +1,117 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: jbtestsuite-postgres
+    environment:
+      POSTGRES_DB: jbtestsuite
+      POSTGRES_USER: jbuser
+      POSTGRES_PASSWORD: jbpass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jbuser -d jbtestsuite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jbtestsuite-network
+
+  selenium:
+    image: selenium/standalone-chromium:latest
+    container_name: jbtestsuite-selenium
+    ports:
+      - "4444:4444"
+      - "7900:7900"  # VNC server for debugging
+    environment:
+      - SE_NODE_MAX_SESSIONS=3
+      - SE_NODE_SESSION_TIMEOUT=300
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+    volumes:
+      - /dev/shm:/dev/shm
+      - selenium_downloads:/home/seluser/Downloads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4444/wd/hub/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jbtestsuite-network
+
+  server:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: jbtestsuite-server
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SELENIUM_HUB_URL=${SELENIUM_HUB_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./server:/app
+      - server_artifacts:/app/artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      selenium:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jbtestsuite-network
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: jbtestsuite-client
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000
+    volumes:
+      - ./client:/app
+      - node_modules:/app/node_modules
+      - client_dist:/app/dist
+    depends_on:
+      - server
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jbtestsuite-network
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+
+volumes:
+  postgres_data:
+    driver: local
+  selenium_downloads:
+    driver: local
+  server_artifacts:
+    driver: local
+  client_dist:
+    driver: local
+  node_modules:
+    driver: local
+
+networks:
+  jbtestsuite-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
